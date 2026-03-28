@@ -343,43 +343,29 @@ a:hover { color: var(--accent-bright); }
 
 <p>Most people use Claude Code to write functions, fix bugs, and refactor files. I do that too. But over the past few months I&rsquo;ve turned it into something closer to a <strong>personal operating system</strong> &mdash; one that shops for me, builds a personal wiki from my conversations, stress-tests my own ideas, and remembers who I am across sessions.</p>
 
-<p>None of this required special access or plugins. It&rsquo;s all built with features that ship in the box: skills, hooks, memory, CLAUDE.md, and the Agent tool. Everything here works in the terminal CLI &mdash; no IDE or extension required. Here are the patterns I&rsquo;ve found most valuable.</p>
+<p>None of this required special access or plugins. It&rsquo;s all built with features that ship in the box: skills, hooks, memory, CLAUDE.md, and the Agent tool. Everything here works in the terminal CLI &mdash; no IDE or extension required.</p>
 
 <hr />
 
-<h2>1. Skills aren&rsquo;t just for code generation</h2>
+<h2>1. Manufacturing fresh eyes</h2>
 
-<p>The <code>.claude/skills/</code> directory is where Claude Code gets interesting. A skill is a markdown file with a prompt template that Claude executes when you type a slash command. Most people write skills like &ldquo;generate a React component&rdquo; or &ldquo;write unit tests.&rdquo;</p>
+<p>When you&rsquo;ve been deep in a document or plan, you can&rsquo;t see the holes anymore. You&rsquo;re too close. The usual advice is &ldquo;get a fresh pair of eyes.&rdquo; With Claude Code, you can manufacture them.</p>
 
-<p>But a skill is really just <strong>a prompt with tool access.</strong> It can read files, write files, run scripts, search the web, and spawn sub-agents. That means any workflow you can describe in words &mdash; search this, filter by that, verify using this script, present results like so &mdash; can become a one-word command.</p>
+<p>The pattern is a structured review skill that works in stages:</p>
 
-<p>I have around a dozen distinct skills, some parameterized across multiple categories. A few write code. The rest do things like: curate items from marketplace listings, produce weekly news briefings, review everything I&rsquo;ve learned about a topic and find connections I missed, and stress-test documents by arguing against them. For example, one of my skills searches eBay for specific vintage clothing &mdash; it reads a criteria file (brands, price range, condition, sizing), runs the search, opens each listing to verify details, and presents a ranked shortlist with photos and reasoning. Typing <code>/hunt</code> does in two minutes what used to take me thirty.</p>
+<ol>
+<li><strong>Cold read.</strong> Spawn a brand-new agent with zero conversation history. Feed it ONLY the document and critique instructions &mdash; no summaries, no author reasoning, no &ldquo;here&rsquo;s what we were thinking.&rdquo; The agent reads it completely cold and produces a structured review: what&rsquo;s sound, what&rsquo;s shaky, what&rsquo;s missing, recommended changes.</li>
+<li><strong>Dialogue rounds.</strong> The facilitator (you, or a skill acting on your behalf with full context) writes an advocate response &mdash; conceding where the critic is right, pushing back where they&rsquo;re wrong. Then a <em>new</em> fresh-context agent reads the artifact, the initial critique, and the advocate response, and rebuts. Back and forth.</li>
+<li><strong>Synthesis.</strong> Agreed changes (both sides concur), contested points (user decides), and new insights that emerged from the exchange.</li>
+</ol>
 
-<p>The pattern doesn&rsquo;t care what domain it&rsquo;s pointed at. If your workflow has clear inputs, criteria, and output format, it&rsquo;s a skill.</p>
+<p>The critical design decision: <strong>the critic only sees the document and instructions.</strong> The moment you leak context &mdash; &ldquo;we chose this approach because...&rdquo; &mdash; you&rsquo;ve defeated the purpose. The entire value is the cold read. Guard it.</p>
 
-<p>The compounding effect is real. Once a skill exists, you refine it over weeks &mdash; tightening filters, improving presentation, adding edge case handling. Each version is better than the last, and the investment carries across every future conversation.</p>
-
-<hr />
-
-<h2>2. The Freshness Problem (and how state solves it)</h2>
-
-<p>If you build a skill that searches for things, you&rsquo;ll hit this fast: <strong>AI search agents return the same results every time.</strong> The same queries hit the same cached pages. Run a search skill on Monday, run it again on Thursday &mdash; same results.</p>
-
-<p>I solved this with a small Python script that gives skills <em>memory across runs</em>. The concept is simple:</p>
-
-<ul>
-<li><strong>Query rotation.</strong> Each search skill has 3 &ldquo;waves&rdquo; of queries. A state file tracks which wave ran last and advances to the next one automatically. Same skill, different searches every time.</li>
-<li><strong>Seen-item tracking.</strong> Every result ID gets logged after presentation. Future runs skip anything already shown. No repeats, ever.</li>
-<li><strong>Cache-busting.</strong> The script outputs a date suffix (e.g., &ldquo;march 2026&rdquo;) that gets appended to a few queries, pushing search engines past their cached results.</li>
-</ul>
-
-<p>The script is ~100 lines of Python. It reads a JSON state file, prints a few variables for the skill to parse, and exits. No database, no server. One thing to watch: if the state file gets corrupted or desynchronized, deduplication breaks silently and you&rsquo;re back to repeat results. I keep mine in a git-tracked directory so I can roll back.</p>
-
-<p>The pattern is general. Any skill that searches for recurring inventory &mdash; job listings, apartments, research papers, marketplace deals, domain names &mdash; has the freshness problem. A small state file and some query rotation fixes it completely.</p>
+<p>Two rounds captures most of the value. I&rsquo;ve caught significant flaws this way that I was blind to after hours of working on the same document.</p>
 
 <hr />
 
-<h2>3. Meta-skills: one conductor, many specialists</h2>
+<h2>2. Meta-skills: one conductor, many specialists</h2>
 
 <p>The most powerful pattern I&rsquo;ve found is <strong>skills that orchestrate other skills.</strong> A meta-skill doesn&rsquo;t do the work itself &mdash; it dispatches multiple specialist agents in parallel, judges their results, sends weak performers back out with specific feedback, and then curates across all results.</p>
 
@@ -400,25 +386,25 @@ a:hover { color: var(--accent-bright); }
 
 <hr />
 
-<h2>4. Manufacturing fresh eyes</h2>
+<h2>3. The Freshness Problem (and how state solves it)</h2>
 
-<p>When you&rsquo;ve been deep in a document or plan, you can&rsquo;t see the holes anymore. You&rsquo;re too close. The usual advice is &ldquo;get a fresh pair of eyes.&rdquo; With Claude Code, you can manufacture them.</p>
+<p>If you build a skill that searches for things, you&rsquo;ll hit this fast: <strong>AI search agents return the same results every time.</strong> The same queries hit the same cached pages. Run a search skill on Monday, run it again on Thursday &mdash; same results.</p>
 
-<p>The pattern is a structured review skill that works in stages:</p>
+<p>I solved this with a small Python script that gives skills <em>memory across runs</em>. The concept is simple:</p>
 
-<ol>
-<li><strong>Cold read.</strong> Spawn a brand-new agent with zero conversation history. Feed it ONLY the document and critique instructions &mdash; no summaries, no author reasoning, no &ldquo;here&rsquo;s what we were thinking.&rdquo; The agent reads it completely cold and produces a structured review: what&rsquo;s sound, what&rsquo;s shaky, what&rsquo;s missing, recommended changes.</li>
-<li><strong>Dialogue rounds.</strong> The facilitator (you, or a skill acting on your behalf with full context) writes an advocate response &mdash; conceding where the critic is right, pushing back where they&rsquo;re wrong. Then a <em>new</em> fresh-context agent reads the artifact, the initial critique, and the advocate response, and rebuts. Back and forth.</li>
-<li><strong>Synthesis.</strong> Agreed changes (both sides concur), contested points (user decides), and new insights that emerged from the exchange.</li>
-</ol>
+<ul>
+<li><strong>Query rotation.</strong> Each search skill has 3 &ldquo;waves&rdquo; of queries. A state file tracks which wave ran last and advances to the next one automatically. Same skill, different searches every time.</li>
+<li><strong>Seen-item tracking.</strong> Every result ID gets logged after presentation. Future runs skip anything already shown. No repeats, ever.</li>
+<li><strong>Cache-busting.</strong> The script outputs a date suffix (e.g., &ldquo;march 2026&rdquo;) that gets appended to a few queries, pushing search engines past their cached results.</li>
+</ul>
 
-<p>The critical design decision: <strong>the critic only sees the document and instructions.</strong> The moment you leak context &mdash; &ldquo;we chose this approach because...&rdquo; &mdash; you&rsquo;ve defeated the purpose. The entire value is the cold read. Guard it.</p>
+<p>The script is ~100 lines of Python. It reads a JSON state file, prints a few variables for the skill to parse, and exits. No database, no server. One thing to watch: if the state file gets corrupted or desynchronized, deduplication breaks silently and you&rsquo;re back to repeat results. I keep mine in a git-tracked directory so I can roll back.</p>
 
-<p>Two rounds captures most of the value. I&rsquo;ve caught significant flaws this way that I was blind to after hours of working on the same document.</p>
+<p>The pattern is general. Any skill that searches for recurring inventory &mdash; job listings, apartments, research papers, marketplace deals, domain names &mdash; has the freshness problem. A small state file and some query rotation fixes it completely.</p>
 
 <hr />
 
-<h2>5. Conversations as a knowledge source</h2>
+<h2>4. Conversations as a knowledge source</h2>
 
 <p>Most conversations with Claude Code produce knowledge &mdash; decisions, facts, connections between ideas. That knowledge disappears when the conversation ends unless you capture it.</p>
 
@@ -436,23 +422,7 @@ a:hover { color: var(--accent-bright); }
 
 <hr />
 
-<h2>6. Hooks: the unsung feature</h2>
-
-<p>Claude Code hooks are shell scripts that fire on specific events &mdash; before a file edit, after a tool runs, when the context gets summarized. The feature ships in the box, but no hooks come pre-installed. You write the ones you need. Most people don&rsquo;t use them at all. I have four, and one of them changed everything.</p>
-
-<p><strong>File protection</strong> (fires before Edit/Write) &mdash; A script that blocks edits to <code>.env</code>, credentials files, <code>package-lock.json</code>, and anything in <code>.git/</code>. Claude has to ask explicitly before touching protected files. Simple, but it&rsquo;s prevented accidental damage more than once.</p>
-
-<p><strong>Auto-formatting</strong> (fires after Edit/Write) &mdash; Strips trailing whitespace and ensures final newlines on HTML files. Consistency without thinking about it.</p>
-
-<p><strong>Context re-injection</strong> (fires after compaction) &mdash; This is the important one. When a long conversation hits the context limit, Claude Code summarizes older messages to free up space. The problem: your carefully written CLAUDE.md instructions get summarized along with everything else, and Claude starts forgetting your conventions.</p>
-
-<p>The fix: a hook that fires after summarization and <strong>re-injects the full CLAUDE.md</strong> into the conversation. A short bash script &mdash; read the file, print it back. Now every long conversation gets the complete instructions restored. If you have a detailed CLAUDE.md and you do long sessions, this one hook is worth the entire feature. (One tradeoff: if your CLAUDE.md is large, reinjection itself consumes context. Keep it tight.)</p>
-
-<p><strong>Notifications</strong> (fires on completion) &mdash; Desktop notifications when long-running tasks finish. Small quality-of-life win.</p>
-
-<hr />
-
-<h2>7. Memory that compounds</h2>
+<h2>5. Memory that compounds</h2>
 
 <p>Claude Code&rsquo;s memory system lets you persist information across conversations. Most people save a few ad hoc notes. The leverage comes from <strong>structure.</strong></p>
 
@@ -473,7 +443,7 @@ a:hover { color: var(--accent-bright); }
 
 <hr />
 
-<h2>8. Session handoffs: picking up where you left off</h2>
+<h2>6. Session handoffs: picking up where you left off</h2>
 
 <p>Claude Code conversations have a context limit. Long sessions eventually hit it, and even when they don&rsquo;t, you might just need to stop for the day. Either way, the problem is the same: <strong>all the accumulated context &mdash; decisions made, approaches rejected, gotchas discovered &mdash; vanishes when the conversation ends.</strong></p>
 
@@ -492,9 +462,7 @@ a:hover { color: var(--accent-bright); }
 
 <p><strong>A SessionStart hook</strong> that checks whether a handoff file exists and is marked &ldquo;pending.&rdquo; If so, it injects the full memo into the new conversation&rsquo;s context before you say anything. The new session reads the handoff and picks up seamlessly &mdash; same mission, same decisions, same awareness of what&rsquo;s been tried.</p>
 
-<p>The hook is simple &mdash; about 15 lines of bash. Check for the file, check the status field, cat it into the session if it&rsquo;s pending.</p>
-
-<p>This is different from the context re-injection hook in section 6, which restores your standing instructions during a long session. The handoff captures what happened <em>in</em> the session &mdash; the decisions, dead ends, and open tasks that your CLAUDE.md doesn&rsquo;t know about.</p>
+<p>A related hook solves a different persistence problem: when long conversations hit the context limit, Claude Code summarizes older messages to free up space &mdash; and your carefully written CLAUDE.md instructions get summarized along with everything else. A hook that fires after summarization and <strong>re-injects the full CLAUDE.md</strong> keeps your conventions intact. If you have a detailed CLAUDE.md and you do long sessions, this one hook is worth knowing about.</p>
 
 <p>This pattern matters most for multi-session projects: a feature that spans a few days, a debugging session you have to pause overnight, a document that goes through multiple revision cycles. Without it, you spend the first five minutes of every new session re-explaining context. With it, you start where you stopped.</p>
 
@@ -508,7 +476,7 @@ a:hover { color: var(--accent-bright); }
 
 <p>The shift that unlocked all of this for me was a simple question: <strong>what workflows in my life can be described as &ldquo;read this, filter by that, decide based on these criteria, and present results like so&rdquo;?</strong> Once I started looking, they were everywhere &mdash; and none of them required writing much code to automate.</p>
 
-      <p class="colophon">Built with Claude Code. Scrutinized by a fresh-context critic who caught five things I missed (section 4). Finished in a second session that picked up cold from a handoff memo (section 8).</p>
+      <p class="colophon">Built with Claude Code. Scrutinized by a fresh-context critic who caught five things I missed (section 1). Finished in a second session that picked up cold from a handoff memo (section 6).</p>
 
     </div>
   </article>
