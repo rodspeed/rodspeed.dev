@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your AI Keeps a Diary About You &mdash; RodSpeed</title>
+  <meta name="description" content="Every AI with persistent memory is building a psychographic profile of you. It's doing it without confidence tracking, decay, or contradiction tolerance. I built a system to fix this." />
+  <meta property="og:title" content="Your AI Keeps a Diary About You. It's Doing It Badly." />
+  <meta property="og:description" content="Epistemic Memory treats every stored belief about you as a weighted hypothesis — not a settled fact. Protocol, templates, and the Mirror skill for Claude Code." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/epistemic-memory.html" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --accent-electric: #3d9aff;
+  --accent-dim: rgba(77, 168, 255, 0.1);
+  --accent-glow: rgba(77, 168, 255, 0.35);
+  --warm: #e8b04a;
+  --purple: #a78bfa;
+  --coral: #e8916d;
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-prose: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-bright); }
+
+/* Background texture */
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__back {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__back:hover { color: var(--text-primary); }
+
+/* Article */
+.article {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 120px;
+}
+
+.article__type {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.article__type::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.article__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.article__date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+}
+
+/* Prose */
+.prose {
+  font-family: var(--font-prose);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.prose p {
+  margin-bottom: 1.5em;
+}
+
+.prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 3em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.01em;
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+  margin: 3em 0;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 20px;
+  margin: 2em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prose code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--accent-bright);
+}
+
+.prose pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 2em 0;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.prose ol, .prose ul {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose li strong {
+  color: var(--accent-bright);
+}
+
+/* Repo link */
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5em;
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.repo-link:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.repo-link svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Colophon */
+.colophon {
+  margin-top: 4em;
+  padding-top: 2em;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .article { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+  .prose { font-size: 1.02rem; }
+  .prose pre { padding: 16px; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <a href="./" class="nav__back">Back to writing</a>
+    </div>
+  </nav>
+
+  <article class="article">
+    <span class="article__type">Essay</span>
+    <h1 class="article__title">Your AI Keeps a Diary About You. It&rsquo;s Doing It Badly.</h1>
+    <p class="article__date">March 2026</p>
+
+    <div class="prose">
+
+<p>Every AI with persistent memory is already building a psychographic profile of you. Personality traits, cognitive style, motivations, working patterns. It&rsquo;s just doing it without any of the machinery that would make that profile trustworthy &mdash; no confidence tracking, no decay, no contradiction tolerance, and no way for you to see or challenge any of it.</p>
+
+<p>&ldquo;You&rsquo;re a deep thinker&rdquo; carries the same weight as &ldquo;you use dark mode.&rdquo; A preference from six months ago is treated as current gospel. Contradictions get smoothed over into a flattering caricature that drifts further from who you actually are with every session.</p>
+
+<p>I built a system to fix this. It&rsquo;s called Epistemic Memory, and it treats every stored belief about you as a weighted hypothesis &mdash; not a settled fact.</p>
+
+<hr />
+
+<h2>The problem with flat memory</h2>
+
+<p>Most AI memory works like a flattering portrait. It accumulates observations, treats each one as equally true, and never forgets or doubts anything. The result is a caricature: static, internally consistent, and increasingly wrong.</p>
+
+<p>The failure modes are specific:</p>
+
+<ul>
+<li><strong>Confidence without evidence.</strong> &ldquo;Values efficiency over thoroughness&rdquo; carries the same certainty as &ldquo;uses Python,&rdquo; despite one being an interpretation and the other being observable.</li>
+<li><strong>No decay.</strong> A preference stated six months ago is treated identically to one confirmed yesterday.</li>
+<li><strong>Coherence bias.</strong> Contradictions get smoothed over. The system builds a neat narrative that misses the mess of actual human behavior.</li>
+<li><strong>No self-audit.</strong> The system never asks &ldquo;am I still right about this?&rdquo;</li>
+</ul>
+
+<p>The deeper an AI models who you are, the more useful it becomes &mdash; but also the more dangerous these failure modes get. Getting someone&rsquo;s editor preference wrong is low-stakes. Getting their cognitive style wrong shapes every response they receive.</p>
+
+<hr />
+
+<h2>What a belief looks like</h2>
+
+<p>In Epistemic Memory, every belief carries metadata:</p>
+
+<pre><code>## Builder Philosophy
+conf:0.75 | first:2026-03-10 | confirmed:2026-03-25 | challenged:&mdash; | perm:durable
+
+Builds for herself first, monetizes if it generalizes.</code></pre>
+
+<p>Five fields, each doing specific work:</p>
+
+<ul>
+<li><strong>conf</strong> &mdash; Confidence (0.0&ndash;1.0). Must be <em>earned</em> through observed behavior, not assigned by how insightful the belief sounds.</li>
+<li><strong>first</strong> &mdash; When this belief was first recorded.</li>
+<li><strong>confirmed</strong> &mdash; Last session where behavior was consistent with it.</li>
+<li><strong>challenged</strong> &mdash; Last session where something contradicted it. A dash means never.</li>
+<li><strong>perm</strong> &mdash; How stable this trait is: <em>stable</em> (decade), <em>durable</em> (year), <em>situational</em> (month).</li>
+</ul>
+
+<p>Confidence and permanence are independent. You can be certain about something that will change (high conf, situational), or uncertain about something deep (low conf, stable). A system that conflates &ldquo;how sure&rdquo; with &ldquo;how stable&rdquo; collapses two useful dimensions into one.</p>
+
+<hr />
+
+<h2>Ten components, ten failure modes</h2>
+
+<p>Each piece of the framework exists because something specific goes wrong without it.</p>
+
+<p><strong>1. Per-belief metadata.</strong> No belief exists as bare text. The metadata is the point &mdash; without it, you can&rsquo;t distinguish a guess from an observation.</p>
+
+<p><strong>2. Confidence that must be earned.</strong> Observable behaviors (&ldquo;uses bullet points in every message&rdquo;) score higher than interpretive models (&ldquo;values efficiency&rdquo;). The convention is a 0.90 cap for anything interpretive &mdash; encoding the principle that you never fully know another person&rsquo;s inner state.</p>
+
+<p><strong>3. Permanence classes.</strong> Heritage and core values (stable) decay on a different schedule than job satisfaction (situational). Treating them the same means the system either forgets too much or remembers too long.</p>
+
+<p><strong>4. Dormancy decay.</strong> When the system goes unused, confidence attenuates. Exponential decay with permanence-dependent half-lives &mdash; starting defaults are ~2 years for stable traits, ~5 months for durable, ~6 weeks for situational. These are starting points, not calibrated values; they need tuning per user. The principle is what matters: a system that hasn&rsquo;t seen you in three months should be less sure about your current priorities.</p>
+
+<p><strong>5. Tensions log.</strong> A running record of contradictions and surprises. Default status: unresolved. This is deliberate &mdash; it resists the urge to wrap every contradiction in a tidy resolution. The user who craves deep work but keeps choosing interrupt-driven roles isn&rsquo;t confused. They&rsquo;re human.</p>
+
+<p><strong>6. Self-report vs. behavior.</strong> When you say &ldquo;I&rsquo;m a morning person&rdquo; but every session starts at 11pm, both data points go on the record. Neither automatically wins. Stated self-perception and observed behavior are different evidence streams. The divergence itself is often the most interesting signal.</p>
+
+<p><strong>7. Silent consistency.</strong> The system doesn&rsquo;t wait for you to narrate yourself. If someone consistently asks for concise output across 20 sessions without ever saying &ldquo;I prefer brevity,&rdquo; that pattern confirms a belief. Behavioral evidence accumulates without requiring metacognitive statements. In practice, this is handled by an automated observation skill that runs at conversation end &mdash; it watches for judgment calls, pushback, and process signals, logging them as dated evidence with strength ratings. The synthesis pass during periodic review decides what earns portrait status.</p>
+
+<p><strong>8. Session counter.</strong> Every 10 sessions, the system presents its 3 highest and 3 lowest confidence beliefs for you to validate, challenge, or ignore. This is the enforcement mechanism &mdash; without it, periodic review is aspirational rather than real. The counter turns &ldquo;we should check&rdquo; into &ldquo;we check on session 10, 20, 30.&rdquo;</p>
+
+<p><strong>9. Maintenance cost bound.</strong> Only update beliefs relevant to the current session. If you&rsquo;re discussing a screenplay, don&rsquo;t re-evaluate beliefs about coding preferences. Without this, the framework becomes a tax on every interaction.</p>
+
+<p><strong>10. The epistemology evolves.</strong> Decay rates can be tuned. New permanence classes can emerge. Evidence-weighting rules can change. Treating the framework itself as fixed would be ironic.</p>
+
+<p>One limitation runs through all ten: there&rsquo;s no external measure of whether the model is accurate. The periodic review is the closest thing, and it depends on the user&rsquo;s own self-knowledge. The system is designed to get better at modeling you &mdash; but &ldquo;better&rdquo; is measured by internal consistency and user validation, not ground truth.</p>
+
+<hr />
+
+<h2>What broke in v1</h2>
+
+<p>The ten components above reflect the post-review design. Here&rsquo;s what the review changed.</p>
+
+<p>Before release, the framework went through an adversarial review &mdash; a fresh-context AI session, given only the design document and instructions to assume it was wrong, looked for specific failure modes. Four things broke:</p>
+
+<p><strong>Untrackable fields.</strong> The original design included an &ldquo;observation count&rdquo; per belief. In practice, there&rsquo;s no reliable way to count observations in a conversation-based system. What counts as one observation? The field was dropped rather than left as fiction.</p>
+
+<p><strong>Speculative claims mixed with observables.</strong> V1 stored &ldquo;estimated IQ range&rdquo; alongside &ldquo;prefers bullet points.&rdquo; These are fundamentally different kinds of claims. The fix: split them into separate categories with different confidence rules. Interpretive estimates are capped lower and flagged.</p>
+
+<p><strong>Coherence bias in the tensions log.</strong> The original log included a &ldquo;likely resolution&rdquo; field. This subtly encouraged the system to resolve tensions prematurely. The field was removed. Unresolved is the healthy default.</p>
+
+<p><strong>No enforcement mechanism.</strong> The periodic review was described but had no trigger. Adding the session counter gave it teeth. This was the most important fix &mdash; a review process that depends on the AI remembering to do it will not happen reliably.</p>
+
+<hr />
+
+<h2>What changes in practice</h2>
+
+<p>The difference between epistemic memory and flat memory shows up in specific moments:</p>
+
+<p><strong>After a gap.</strong> Instead of stale certainty, the system returns with appropriately reduced confidence. &ldquo;Last time we talked, you were frustrated with X &mdash; is that still the case?&rdquo; instead of assuming it is.</p>
+
+<p><strong>When you contradict yourself.</strong> Tensions stay on the record instead of being silently resolved into a coherent story. This matches how people actually experience themselves.</p>
+
+<p><strong>When you want to correct it.</strong> You can see <em>why</em> the system believes something and how confident it is. This makes corrections targeted &mdash; &ldquo;your confidence on that is too high&rdquo; &mdash; rather than wholesale &mdash; &ldquo;you don&rsquo;t know me.&rdquo;</p>
+
+<p><strong>Over time.</strong> Decay, periodic reviews, and the tensions log create pressure toward accuracy rather than accumulation. The system is designed to get better at modeling you, not just bigger. The entire protocol depends on the LLM reliably following it &mdash; and LLMs follow complex instructions inconsistently. The session counter mechanizes one enforcement point; the rest depend on instruction-following that isn&rsquo;t guaranteed.</p>
+
+<hr />
+
+<h2>The consent line</h2>
+
+<p>Every AI with persistent memory is doing psychographic profiling. The question isn&rsquo;t whether to model personality &mdash; it&rsquo;s whether to do it well, and whether the subject gets to see and control it.</p>
+
+<p>Adtech builds psychographic profiles to predict and manipulate behavior without the subject&rsquo;s knowledge. Epistemic Memory builds one to collaborate more effectively, and the subject holds the keys. Every belief is visible. Every belief can be challenged. The <code>/mirror</code> command surfaces the full model back to you as a portrait you can correct &mdash; not a hidden dossier you never see.</p>
+
+<p>Transparency is necessary, but it may not be sufficient. You can see the beliefs, but you can&rsquo;t fully audit how those beliefs shape every response you receive. That&rsquo;s an open problem &mdash; one that visibility alone doesn&rsquo;t close.</p>
+
+<p>The deeper your AI understands how you think, the more useful the collaboration becomes. But that deeper understanding needs to be honest &mdash; held as hypothesis, not as settled fact. It needs to weaken when evidence goes stale. And it needs to be yours.</p>
+
+      <div class="colophon">
+        <p>Epistemic Memory is open source. Protocol, templates, and the Mirror skill for Claude Code:</p>
+        <a href="https://github.com/rodspeed/epistemic-memory" class="repo-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          github.com/rodspeed/epistemic-memory
+        </a>
+      </div>
+
+    </div>
+  </article>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
