@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing &mdash; RodSpeed</title>
+  <meta name="description" content="Essays by Rodney Jehu on AI agents, linguistic cognition, and building tools that think differently." />
+  <meta property="og:title" content="Writing — RodSpeed" />
+  <meta property="og:description" content="Essays on AI agents, linguistic cognition, and building tools that think differently." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --accent-electric: #3d9aff;
+  --accent-dim: rgba(77, 168, 255, 0.1);
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-prose: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+a { color: inherit; text-decoration: none; }
+
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav__links a {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__links a:hover { color: var(--text-primary); }
+
+/* Page */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 120px;
+}
+
+.page__title {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 48px;
+}
+
+/* Post list */
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.post {
+  display: block;
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.post:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.post:hover .post__title {
+  color: var(--accent-bright);
+}
+
+.post__date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.post__title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 10px;
+  transition: color 0.2s;
+}
+
+.post__summary {
+  font-family: var(--font-prose);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .page { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <ul class="nav__links">
+        <li><a href="../#works">Work</a></li>
+        <li><a href="../#about">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="page">
+    <h1 class="page__title">Writing</h1>
+
+    <div class="post-list">
+
+      <a href="claude-code-beyond-coding.html" class="post">
+        <p class="post__date">March 2026</p>
+        <h2 class="post__title">Claude Code Is Not a Code Editor. Here&rsquo;s What I Actually Built With It.</h2>
+        <p class="post__summary">Skills, hooks, memory, handoffs, and meta-agents &mdash; patterns for turning Claude Code into a general-purpose automation tool.</p>
+      </a>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
