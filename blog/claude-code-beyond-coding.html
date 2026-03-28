@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Code Is Not a Code Editor &mdash; RodSpeed</title>
+  <meta name="description" content="Most people use Claude Code to write functions. I turned it into a personal operating system — one that shops for me, builds a wiki from my conversations, stress-tests my ideas, and remembers who I am across sessions." />
+  <meta property="og:title" content="Claude Code Is Not a Code Editor. Here's What I Actually Built With It." />
+  <meta property="og:description" content="Skills, hooks, memory, handoffs, and meta-agents — patterns for turning Claude Code into a general-purpose automation tool." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/claude-code-beyond-coding.html" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --accent-electric: #3d9aff;
+  --accent-dim: rgba(77, 168, 255, 0.1);
+  --accent-glow: rgba(77, 168, 255, 0.35);
+  --warm: #e8b04a;
+  --purple: #a78bfa;
+  --coral: #e8916d;
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-prose: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-bright); }
+
+/* Background texture */
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__back {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__back:hover { color: var(--text-primary); }
+
+/* Article */
+.article {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 120px;
+}
+
+.article__type {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.article__type::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.article__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.article__date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+}
+
+/* Prose */
+.prose {
+  font-family: var(--font-prose);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.prose p {
+  margin-bottom: 1.5em;
+}
+
+.prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 3em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.01em;
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+  margin: 3em 0;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 20px;
+  margin: 2em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prose code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--accent-bright);
+}
+
+.prose ol, .prose ul {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose li strong {
+  color: var(--accent-bright);
+}
+
+/* Colophon */
+.colophon {
+  margin-top: 4em;
+  padding-top: 2em;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .article { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+  .prose { font-size: 1.02rem; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <a href="../#works" class="nav__back">Back to works</a>
+    </div>
+  </nav>
+
+  <article class="article">
+    <span class="article__type">Essay</span>
+    <h1 class="article__title">Claude Code Is Not a Code Editor. Here&rsquo;s What I Actually Built With It.</h1>
+    <p class="article__date">March 2026</p>
+
+    <div class="prose">
+
+<p>Most people use Claude Code to write functions, fix bugs, and refactor files. I do that too. But over the past few months I&rsquo;ve turned it into something closer to a <strong>personal operating system</strong> &mdash; one that shops for me, builds a personal wiki from my conversations, stress-tests my own ideas, and remembers who I am across sessions.</p>
+
+<p>None of this required special access or plugins. It&rsquo;s all built with features that ship in the box: skills, hooks, memory, CLAUDE.md, and the Agent tool. Everything here works in the terminal CLI &mdash; no IDE or extension required. Here are the patterns I&rsquo;ve found most valuable.</p>
+
+<hr />
+
+<h2>1. Skills aren&rsquo;t just for code generation</h2>
+
+<p>The <code>.claude/skills/</code> directory is where Claude Code gets interesting. A skill is a markdown file with a prompt template that Claude executes when you type a slash command. Most people write skills like &ldquo;generate a React component&rdquo; or &ldquo;write unit tests.&rdquo;</p>
+
+<p>But a skill is really just <strong>a prompt with tool access.</strong> It can read files, write files, run scripts, search the web, and spawn sub-agents. That means any workflow you can describe in words &mdash; search this, filter by that, verify using this script, present results like so &mdash; can become a one-word command.</p>
+
+<p>I have around a dozen distinct skills, some parameterized across multiple categories. A few write code. The rest do things like: curate items from marketplace listings, produce weekly news briefings, review everything I&rsquo;ve learned about a topic and find connections I missed, and stress-test documents by arguing against them. For example, one of my skills searches eBay for specific vintage clothing &mdash; it reads a criteria file (brands, price range, condition, sizing), runs the search, opens each listing to verify details, and presents a ranked shortlist with photos and reasoning. Typing <code>/hunt</code> does in two minutes what used to take me thirty.</p>
+
+<p>The pattern doesn&rsquo;t care what domain it&rsquo;s pointed at. If your workflow has clear inputs, criteria, and output format, it&rsquo;s a skill.</p>
+
+<p>The compounding effect is real. Once a skill exists, you refine it over weeks &mdash; tightening filters, improving presentation, adding edge case handling. Each version is better than the last, and the investment carries across every future conversation.</p>
+
+<hr />
+
+<h2>2. The Freshness Problem (and how state solves it)</h2>
+
+<p>If you build a skill that searches for things, you&rsquo;ll hit this fast: <strong>AI search agents return the same results every time.</strong> The same queries hit the same cached pages. Run a search skill on Monday, run it again on Thursday &mdash; same results.</p>
+
+<p>I solved this with a small Python script that gives skills <em>memory across runs</em>. The concept is simple:</p>
+
+<ul>
+<li><strong>Query rotation.</strong> Each search skill has 3 &ldquo;waves&rdquo; of queries. A state file tracks which wave ran last and advances to the next one automatically. Same skill, different searches every time.</li>
+<li><strong>Seen-item tracking.</strong> Every result ID gets logged after presentation. Future runs skip anything already shown. No repeats, ever.</li>
+<li><strong>Cache-busting.</strong> The script outputs a date suffix (e.g., &ldquo;march 2026&rdquo;) that gets appended to a few queries, pushing search engines past their cached results.</li>
+</ul>
+
+<p>The script is ~100 lines of Python. It reads a JSON state file, prints a few variables for the skill to parse, and exits. No database, no server. One thing to watch: if the state file gets corrupted or desynchronized, deduplication breaks silently and you&rsquo;re back to repeat results. I keep mine in a git-tracked directory so I can roll back.</p>
+
+<p>The pattern is general. Any skill that searches for recurring inventory &mdash; job listings, apartments, research papers, marketplace deals, domain names &mdash; has the freshness problem. A small state file and some query rotation fixes it completely.</p>
+
+<hr />
+
+<h2>3. Meta-skills: one conductor, many specialists</h2>
+
+<p>The most powerful pattern I&rsquo;ve found is <strong>skills that orchestrate other skills.</strong> A meta-skill doesn&rsquo;t do the work itself &mdash; it dispatches multiple specialist agents in parallel, judges their results, sends weak performers back out with specific feedback, and then curates across all results.</p>
+
+<p>Here&rsquo;s how it works in practice. Say you have five specialist skills that each search a different category &mdash; jackets, pants, knitwear, whatever your domain is. The meta-skill launches all five as parallel agents. When results come back, it plays editor: &ldquo;The jacket search returned great stuff, but the knitwear results are all the same brand &mdash; go back and dig deeper.&rdquo; The weak agents re-run with that specific feedback. Finally, the meta-skill curates <em>across</em> all categories, picking pieces that work well together, not just individually.</p>
+
+<p>The general shape:</p>
+
+<ol>
+<li><strong>Deploy</strong> &mdash; launch N agents in parallel, each with its own instructions and search criteria</li>
+<li><strong>Judge</strong> &mdash; assess quality as results arrive. Any category empty? Results too similar? Wrong price range?</li>
+<li><strong>Re-hunt</strong> &mdash; send specific agents back with targeted feedback</li>
+<li><strong>Curate</strong> &mdash; pick the best results across all categories, looking at how they work together, not just individually</li>
+</ol>
+
+<p>The trick is that sub-agents can&rsquo;t invoke skills directly &mdash; so the meta-skill prompt has to inline the full instructions for each specialist. This is verbose but it works. Each agent reads its own criteria, runs the freshness check, searches, verifies, and reports back independently.</p>
+
+<p>Claude Code&rsquo;s parallel Agent tool makes this practical &mdash; multiple agents running at the same time, each doing its own searches and checks, all reporting back to one conductor that makes the final call. Be aware: this pattern uses a lot of tokens. Each parallel agent uses its own context window, and the conductor needs room to review all of their output. The conductor can also miss bad results from an agent &mdash; it&rsquo;s not perfect quality control.</p>
+
+<hr />
+
+<h2>4. Manufacturing fresh eyes</h2>
+
+<p>When you&rsquo;ve been deep in a document or plan, you can&rsquo;t see the holes anymore. You&rsquo;re too close. The usual advice is &ldquo;get a fresh pair of eyes.&rdquo; With Claude Code, you can manufacture them.</p>
+
+<p>The pattern is a structured review skill that works in stages:</p>
+
+<ol>
+<li><strong>Cold read.</strong> Spawn a brand-new agent with zero conversation history. Feed it ONLY the document and critique instructions &mdash; no summaries, no author reasoning, no &ldquo;here&rsquo;s what we were thinking.&rdquo; The agent reads it completely cold and produces a structured review: what&rsquo;s sound, what&rsquo;s shaky, what&rsquo;s missing, recommended changes.</li>
+<li><strong>Dialogue rounds.</strong> The facilitator (you, or a skill acting on your behalf with full context) writes an advocate response &mdash; conceding where the critic is right, pushing back where they&rsquo;re wrong. Then a <em>new</em> fresh-context agent reads the artifact, the initial critique, and the advocate response, and rebuts. Back and forth.</li>
+<li><strong>Synthesis.</strong> Agreed changes (both sides concur), contested points (user decides), and new insights that emerged from the exchange.</li>
+</ol>
+
+<p>The critical design decision: <strong>the critic only sees the document and instructions.</strong> The moment you leak context &mdash; &ldquo;we chose this approach because...&rdquo; &mdash; you&rsquo;ve defeated the purpose. The entire value is the cold read. Guard it.</p>
+
+<p>Two rounds captures most of the value. I&rsquo;ve caught significant flaws this way that I was blind to after hours of working on the same document.</p>
+
+<hr />
+
+<h2>5. Conversations as a knowledge source</h2>
+
+<p>Most conversations with Claude Code produce knowledge &mdash; decisions, facts, connections between ideas. That knowledge disappears when the conversation ends unless you capture it.</p>
+
+<p>I built a harvest skill that runs at the end of every substantive conversation. It scans the exchange, extracts insights, and proposes them as structured notes &mdash; each one a small markdown file with a title, tags, and links to related notes. For example, after a conversation where you debated whether to build a feature in-house or use a third-party API, the harvest might produce a note titled &ldquo;Build vs. buy: payment processing&rdquo; linked to existing notes on &ldquo;vendor lock-in&rdquo; and &ldquo;maintenance burden.&rdquo; Over time, you build a personal wiki where the entries are byproducts of work you were already doing.</p>
+
+<p>The linking works because Claude reads the existing note index and spots relationships between notes that share no obvious keywords but relate conceptually. It&rsquo;s not doing anything fancy under the hood &mdash; it&rsquo;s just reading a list of titles and tags and reasoning about what connects to what. That catches connections I wouldn&rsquo;t make manually.</p>
+
+<p>The collection of notes compounds over time. Periodically, I run a separate reasoning skill that reviews everything &mdash; surfacing connections between notes that nobody explicitly linked, flagging gaps in what I know, and proposing summary notes when several notes start circling the same topic. This step isn&rsquo;t automatic; the harvest skill nudges me when enough new notes have accumulated.</p>
+
+<p>The loop is: <strong>work &rarr; harvest (automatic) &rarr; reason (prompted) &rarr; discover &rarr; work.</strong> It&rsquo;s not fully automatic &mdash; the reasoning step needs a kick. But each conversation still feeds the next one, and the notes get richer and more useful over time.</p>
+
+<p>The CLAUDE.md instruction that makes the harvest step automatic:</p>
+
+<blockquote>At the end of every substantive conversation, run the harvest skill automatically. Substantive = produced new knowledge. Skip for trivial exchanges. Don&rsquo;t ask &mdash; just do it.</blockquote>
+
+<hr />
+
+<h2>6. Hooks: the unsung feature</h2>
+
+<p>Claude Code hooks are shell scripts that fire on specific events &mdash; before a file edit, after a tool runs, when the context gets summarized. The feature ships in the box, but no hooks come pre-installed. You write the ones you need. Most people don&rsquo;t use them at all. I have four, and one of them changed everything.</p>
+
+<p><strong>File protection</strong> (fires before Edit/Write) &mdash; A script that blocks edits to <code>.env</code>, credentials files, <code>package-lock.json</code>, and anything in <code>.git/</code>. Claude has to ask explicitly before touching protected files. Simple, but it&rsquo;s prevented accidental damage more than once.</p>
+
+<p><strong>Auto-formatting</strong> (fires after Edit/Write) &mdash; Strips trailing whitespace and ensures final newlines on HTML files. Consistency without thinking about it.</p>
+
+<p><strong>Context re-injection</strong> (fires after compaction) &mdash; This is the important one. When a long conversation hits the context limit, Claude Code summarizes older messages to free up space. The problem: your carefully written CLAUDE.md instructions get summarized along with everything else, and Claude starts forgetting your conventions.</p>
+
+<p>The fix: a hook that fires after summarization and <strong>re-injects the full CLAUDE.md</strong> into the conversation. A short bash script &mdash; read the file, print it back. Now every long conversation gets the complete instructions restored. If you have a detailed CLAUDE.md and you do long sessions, this one hook is worth the entire feature. (One tradeoff: if your CLAUDE.md is large, reinjection itself consumes context. Keep it tight.)</p>
+
+<p><strong>Notifications</strong> (fires on completion) &mdash; Desktop notifications when long-running tasks finish. Small quality-of-life win.</p>
+
+<hr />
+
+<h2>7. Memory that compounds</h2>
+
+<p>Claude Code&rsquo;s memory system lets you persist information across conversations. Most people save a few ad hoc notes. The leverage comes from <strong>structure.</strong></p>
+
+<p>I organize memory into typed categories:</p>
+
+<ul>
+<li><strong>User memories</strong> &mdash; who I am, how I work, what I know. Claude calibrates its communication based on these. A senior engineer and a first-time coder should get very different explanations.</li>
+<li><strong>Feedback memories</strong> &mdash; corrections AND confirmations. This is the key discipline most people miss. If you only save corrections (&ldquo;don&rsquo;t do X&rdquo;), Claude grows overly cautious over time. Saving confirmations too (&ldquo;yes, the single bundled PR was the right call&rdquo;) preserves good judgment alongside the guardrails.</li>
+<li><strong>Project memories</strong> &mdash; ongoing work, deadlines, decisions. Always convert relative dates to absolute (&ldquo;Thursday&rdquo; &rarr; &ldquo;2026-03-05&rdquo;) so the memory still makes sense two weeks later.</li>
+<li><strong>Reference memories</strong> &mdash; where to find things in external systems. &ldquo;Pipeline bugs are tracked in Linear project X.&rdquo; &ldquo;The oncall dashboard is at Y.&rdquo;</li>
+</ul>
+
+<p>Each memory is its own markdown file with a small header that says what type it is. A top-level index (<code>MEMORY.md</code>) provides the lookup table &mdash; but here&rsquo;s the design choice that matters: <strong>MEMORY.md gets loaded into every conversation&rsquo;s context window.</strong> If you dump all your memories into that file, it balloons and eats tokens before you&rsquo;ve even said anything.</p>
+
+<p>The fix is sub-indexes. MEMORY.md stays thin &mdash; one line per category with a link to a category-level <code>INDEX.md</code>. Each sub-index lists the actual memory files in that category. Claude reads the top-level index every time, but only dives into a sub-index when the conversation touches that category. My top-level index is 17 lines covering 18+ memory files across four categories. It costs almost nothing to load, but everything is reachable when needed.</p>
+
+<p>Over time, you accumulate a profile that makes every new conversation smarter than the last &mdash; Claude knows who you are, what you&rsquo;ve decided, what worked, and where to find things, without you repeating any of it.</p>
+
+<hr />
+
+<h2>8. Session handoffs: picking up where you left off</h2>
+
+<p>Claude Code conversations have a context limit. Long sessions eventually hit it, and even when they don&rsquo;t, you might just need to stop for the day. Either way, the problem is the same: <strong>all the accumulated context &mdash; decisions made, approaches rejected, gotchas discovered &mdash; vanishes when the conversation ends.</strong></p>
+
+<p>The handoff pattern solves this with two pieces:</p>
+
+<p><strong>A <code>/handoff</code> skill</strong> that you run before ending a session. It scans the full conversation and writes a structured memo to a fixed file (<code>.claude/handoff.md</code>). The memo captures:</p>
+
+<ul>
+<li><strong>Mission</strong> &mdash; what you&rsquo;re trying to accomplish, in one sentence</li>
+<li><strong>Decisions</strong> &mdash; what was chosen, what was rejected, and <em>why</em>. This is the most important part. Without the reasoning, a fresh session will re-debate settled questions</li>
+<li><strong>Key files</strong> &mdash; what was read, edited, or matters, with a note on each file&rsquo;s role</li>
+<li><strong>Current state</strong> &mdash; what&rsquo;s done, what&rsquo;s in progress, what&rsquo;s blocked</li>
+<li><strong>Open tasks</strong> &mdash; remaining work, specific enough to act on without re-reading the old conversation</li>
+<li><strong>Gotchas</strong> &mdash; non-obvious things the next session needs to know: edge cases, environment quirks, things that don&rsquo;t work</li>
+</ul>
+
+<p><strong>A SessionStart hook</strong> that checks whether a handoff file exists and is marked &ldquo;pending.&rdquo; If so, it injects the full memo into the new conversation&rsquo;s context before you say anything. The new session reads the handoff and picks up seamlessly &mdash; same mission, same decisions, same awareness of what&rsquo;s been tried.</p>
+
+<p>The hook is simple &mdash; about 15 lines of bash. Check for the file, check the status field, cat it into the session if it&rsquo;s pending.</p>
+
+<p>This is different from the context re-injection hook in section 6, which restores your standing instructions during a long session. The handoff captures what happened <em>in</em> the session &mdash; the decisions, dead ends, and open tasks that your CLAUDE.md doesn&rsquo;t know about.</p>
+
+<p>This pattern matters most for multi-session projects: a feature that spans a few days, a debugging session you have to pause overnight, a document that goes through multiple revision cycles. Without it, you spend the first five minutes of every new session re-explaining context. With it, you start where you stopped.</p>
+
+<p>This post is actually an example: the previous session wrote, scrutinized, and revised the blog post, then ran <code>/handoff</code>. This session picked it up cold and knew exactly what was done, what wasn&rsquo;t, and what to do next.</p>
+
+<hr />
+
+<h2>The meta-lesson</h2>
+
+<p>Claude Code is a terminal with an LLM in it. The LLM can read files, write files, run commands, search the web, and launch other agents. That makes it a <strong>general-purpose automation tool</strong>, not just a code editor.</p>
+
+<p>The shift that unlocked all of this for me was a simple question: <strong>what workflows in my life can be described as &ldquo;read this, filter by that, decide based on these criteria, and present results like so&rdquo;?</strong> Once I started looking, they were everywhere &mdash; and none of them required writing much code to automate.</p>
+
+      <p class="colophon">Built with Claude Code. Scrutinized by a fresh-context critic who caught five things I missed (section 4). Finished in a second session that picked up cold from a handoff memo (section 8).</p>
+
+    </div>
+  </article>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
