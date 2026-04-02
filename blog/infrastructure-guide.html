@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Full Stack: How I Engineered a Cognitive Operating System Inside Claude Code &mdash; RodSpeed</title>
+  <meta name="description"
+    content="Lenses, skills, epistemic memory, adversarial review, and auto-observation — the complete infrastructure guide to a reasoning system built from markdown files and shell hooks." />
+  <meta property="og:title"
+    content="The Full Stack: How I Engineered a Cognitive Operating System Inside Claude Code" />
+  <meta property="og:description"
+    content="Five architectural layers that turn a CLI coding assistant into a multi-session cognitive system with epistemic honesty and empirically validated reasoning constraints." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/infrastructure-guide.html" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    :root {
+      --bg: #0d1b30;
+      --bg-light: #11223d;
+      --accent: #4da8ff;
+      --accent-bright: #6dc0ff;
+      --accent-electric: #3d9aff;
+      --accent-dim: rgba(77, 168, 255, 0.1);
+      --accent-glow: rgba(77, 168, 255, 0.35);
+      --warm: #e8b04a;
+      --warm-dim: rgba(232, 176, 74, 0.1);
+      --warm-glow: rgba(232, 176, 74, 0.35);
+      --purple: #a78bfa;
+      --purple-dim: rgba(167, 139, 250, 0.1);
+      --purple-glow: rgba(167, 139, 250, 0.35);
+      --coral: #e8916d;
+      --coral-dim: rgba(232, 145, 109, 0.1);
+      --emerald: #34d399;
+      --emerald-dim: rgba(52, 211, 153, 0.1);
+      --emerald-glow: rgba(52, 211, 153, 0.35);
+      --rose: #fb7185;
+      --rose-dim: rgba(251, 113, 133, 0.1);
+      --teal: #2dd4bf;
+      --teal-dim: rgba(45, 212, 191, 0.1);
+      --surface: rgba(120, 170, 255, 0.05);
+      --border: rgba(120, 170, 255, 0.1);
+      --border-bright: rgba(120, 170, 255, 0.2);
+      --text-primary: #e6ecf5;
+      --text-secondary: rgba(230, 236, 245, 0.65);
+      --text-muted: rgba(230, 236, 245, 0.3);
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-prose: 'Newsreader', Georgia, serif;
+      --font-mono: 'Fira Code', 'Consolas', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-secondary);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--accent-dim);
+      color: var(--text-primary);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--accent-bright);
+    }
+
+    /* Background texture */
+    .bg-weave {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100, 160, 255, 0.02) 3px, rgba(100, 160, 255, 0.02) 4px, transparent 4px, transparent 8px),
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80, 140, 240, 0.016) 3px, rgba(80, 140, 240, 0.016) 4px, transparent 4px, transparent 8px);
+    }
+
+    .bg-noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.02;
+    }
+
+    /* Nav */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: rgba(13, 27, 48, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav__inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav__name {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    .nav__back {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+
+    .nav__back:hover {
+      color: var(--text-primary);
+    }
+
+    /* Article */
+    .article {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 120px 40px 120px;
+    }
+
+    .article__type {
+      font-family: var(--font-heading);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.1s;
+    }
+
+    .article__type::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-bright);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .article__title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.25s;
+    }
+
+    .article__date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.4s;
+    }
+
+    /* Prose */
+    .prose {
+      font-family: var(--font-prose);
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    .prose p {
+      margin-bottom: 1.5em;
+    }
+
+    .prose h2 {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 3em;
+      margin-bottom: 0.8em;
+      letter-spacing: -0.01em;
+    }
+
+    .prose h2:first-child {
+      margin-top: 0;
+    }
+
+    .prose h3 {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 2em;
+      margin-bottom: 0.6em;
+    }
+
+    .prose strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .prose em {
+      font-style: italic;
+      color: var(--accent-bright);
+    }
+
+    .prose hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+      margin: 3em 0;
+    }
+
+    .prose blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: 20px;
+      margin: 2em 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .prose code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--accent-bright);
+    }
+
+    .prose pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 2em 0;
+      overflow-x: auto;
+    }
+
+    .prose pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.85em;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .prose ol,
+    .prose ul {
+      margin-bottom: 1.5em;
+      padding-left: 1.5em;
+    }
+
+    .prose li {
+      margin-bottom: 0.5em;
+    }
+
+    .prose li strong {
+      color: var(--accent-bright);
+    }
+
+    /* TOC */
+    .toc {
+      margin: 2em 0;
+      padding: 20px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .toc__title {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .toc__list {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 0;
+      counter-reset: toc;
+    }
+
+    .toc__list li {
+      counter-increment: toc;
+      margin-bottom: 6px;
+    }
+
+    .toc__list li::before {
+      content: counter(toc) ".";
+      display: inline-block;
+      width: 24px;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+    }
+
+    .toc__list a {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+
+    .toc__list a:hover {
+      color: var(--accent-bright);
+    }
+
+    /* ── Diagrams ─────────────────────────────────── */
+    .diagram {
+      margin: 2.5em 0;
+      padding: 32px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow-x: auto;
+    }
+
+    .diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .diagram__caption {
+      display: block;
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 16px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Layer stack (animated) ───────────────────── */
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 2em 0;
+    }
+
+    .layer-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: default;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .layer-bar.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .layer-bar:hover {
+      transform: translateX(4px);
+    }
+
+    .layer-bar__number {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      min-width: 20px;
+      opacity: 0.5;
+    }
+
+    .layer-bar__name {
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      min-width: 160px;
+    }
+
+    .layer-bar__desc {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .layer-bar--sky {
+      background: var(--accent-dim);
+      border-color: rgba(77, 168, 255, 0.15);
+    }
+
+    .layer-bar--sky:hover {
+      border-color: rgba(77, 168, 255, 0.35);
+      box-shadow: 0 0 20px rgba(77, 168, 255, 0.08);
+    }
+
+    .layer-bar--sky .layer-bar__name {
+      color: var(--accent-bright);
+    }
+
+    .layer-bar--warm {
+      background: var(--warm-dim);
+      border-color: rgba(232, 176, 74, 0.15);
+    }
+
+    .layer-bar--warm:hover {
+      border-color: rgba(232, 176, 74, 0.35);
+      box-shadow: 0 0 20px rgba(232, 176, 74, 0.08);
+    }
+
+    .layer-bar--warm .layer-bar__name {
+      color: var(--warm);
+    }
+
+    .layer-bar--emerald {
+      background: var(--emerald-dim);
+      border-color: rgba(52, 211, 153, 0.15);
+    }
+
+    .layer-bar--emerald:hover {
+      border-color: rgba(52, 211, 153, 0.35);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.08);
+    }
+
+    .layer-bar--emerald .layer-bar__name {
+      color: var(--emerald);
+    }
+
+    .layer-bar--purple {
+      background: var(--purple-dim);
+      border-color: rgba(167, 139, 250, 0.15);
+    }
+
+    .layer-bar--purple:hover {
+      border-color: rgba(167, 139, 250, 0.35);
+      box-shadow: 0 0 20px rgba(167, 139, 250, 0.08);
+    }
+
+    .layer-bar--purple .layer-bar__name {
+      color: var(--purple);
+    }
+
+    .layer-bar--muted {
+      background: rgba(120, 170, 255, 0.03);
+      border-color: rgba(120, 170, 255, 0.08);
+    }
+
+    .layer-bar--muted:hover {
+      border-color: rgba(120, 170, 255, 0.2);
+      box-shadow: 0 0 20px rgba(120, 170, 255, 0.05);
+    }
+
+    .layer-bar--muted .layer-bar__name {
+      color: var(--text-secondary);
+    }
+
+    /* ── Skill cards ──────────────────────────────── */
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      margin: 2em 0;
+    }
+
+    .skill-card {
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .skill-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .skill-card__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .skill-card__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .skill-card__name {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .skill-card__pattern {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .skill-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* ── Lens cards (enhanced) ────────────────────── */
+    .lens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 10px;
+      margin: 2em 0;
+    }
+
+    .lens-card {
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lens-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--accent));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .lens-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-1px);
+    }
+
+    .lens-card:hover::before {
+      opacity: 1;
+    }
+
+    .lens-card__name {
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--card-accent, var(--accent-bright));
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+
+    .lens-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .lens-card__badge {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+    }
+
+    /* ── Accuracy bar chart ───────────────────────── */
+    .accuracy-chart {
+      margin: 2em 0;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .accuracy-chart__title {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .accuracy-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .accuracy-row__label {
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .accuracy-row__track {
+      flex: 1;
+      height: 28px;
+      background: rgba(120, 170, 255, 0.04);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .accuracy-row__fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: white;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .accuracy-row__gain {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 55px;
+    }
+
+    /* ── Flow arrow connector ─────────────────────── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 2em 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .flow__step {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .flow__step:hover {
+      transform: scale(1.04);
+    }
+
+    .flow__arrow {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      padding: 0 6px;
+      user-select: none;
+    }
+
+    /* ── Belief card ──────────────────────────────── */
+    .belief-demo {
+      margin: 2em 0;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .belief-demo__key {
+      color: var(--accent-bright);
+    }
+
+    .belief-demo__val {
+      color: var(--text-primary);
+    }
+
+    .belief-demo__comment {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Decay visualization ──────────────────────── */
+    .decay-viz {
+      margin: 2em 0;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .decay-viz__title {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .decay-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .decay-row__label {
+      font-family: var(--font-heading);
+      font-size: 0.78rem;
+      font-weight: 600;
+      min-width: 90px;
+      text-align: right;
+    }
+
+    .decay-row__track {
+      flex: 1;
+      height: 6px;
+      background: rgba(120, 170, 255, 0.06);
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .decay-row__dot {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid;
+      background: var(--bg);
+      transition: left 2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .decay-row__half {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      min-width: 80px;
+    }
+
+    /* ── Observation format demo ──────────────────── */
+    .obs-demo {
+      margin: 2em 0;
+      padding: 20px 24px;
+      background: var(--teal-dim);
+      border: 1px solid rgba(45, 212, 191, 0.15);
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+
+    .obs-demo__field {
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+    }
+
+    .obs-demo__value {
+      color: var(--text-secondary);
+    }
+
+    /* ── Hook table ───────────────────────────────── */
+    .hook-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5em 0;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+    }
+
+    .hook-table th {
+      font-family: var(--font-heading);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(120, 170, 255, 0.06);
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hook-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .hook-table td:first-child {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent-bright);
+      white-space: nowrap;
+    }
+
+    .hook-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ── Colophon ─────────────────────────────────── */
+    .colophon {
+      margin-top: 4em;
+      padding-top: 2em;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 40px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
+
+    .footer__links {
+      list-style: none;
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer__links a {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      transition: color 0.3s;
+    }
+
+    .footer__links a:hover {
+      color: var(--text-primary);
+    }
+
+    .footer__copy {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Animations ───────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px var(--accent);
+      }
+
+      50% {
+        box-shadow: 0 0 16px var(--accent-glow);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* ── Scroll-triggered fade ────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Mobile ───────────────────────────────────── */
+    @media (max-width: 640px) {
+      .article {
+        padding: 100px 20px 80px;
+      }
+
+      .nav__inner {
+        padding: 0 20px;
+      }
+
+      .footer {
+        padding: 24px 20px 40px;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .prose {
+        font-size: 1.02rem;
+      }
+
+      .prose pre {
+        padding: 16px;
+      }
+
+      .skill-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lens-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .diagram {
+        padding: 20px 12px;
+      }
+
+      .flow {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .flow__arrow {
+        transform: rotate(90deg);
+      }
+
+      .layer-bar {
+        flex-wrap: wrap;
+      }
+
+      .layer-bar__desc {
+        flex-basis: 100%;
+        padding-left: 36px;
+      }
+
+      .accuracy-row {
+        flex-wrap: wrap;
+      }
+
+      .accuracy-row__label {
+        min-width: auto;
+        text-align: left;
+        flex-basis: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <a href="./" class="nav__back">Back to writing</a>
+    </div>
+  </nav>
+
+  <article class="article">
+    <span class="article__type">Infrastructure Guide</span>
+    <h1 class="article__title">The Full Stack: A Cognitive Operating System Inside Claude Code</h1>
+    <p class="article__date">April 2026</p>
+
+    <div class="prose">
+
+      <p>Claude Code ships as a CLI coding assistant. It reads files, writes code, runs tests. What it
+        doesn&rsquo;t ship with is opinions about how to <em>think</em>. No reasoning strategies, no memory across
+        sessions, no way to challenge its own blind spots. It&rsquo;s a capable mind with no cognitive
+        architecture around it.</p>
+
+      <p>Over the past several months I&rsquo;ve built that architecture. Not by modifying Claude&rsquo;s weights or
+        calling custom APIs&mdash;just by composing the extension points Claude Code already provides: skills (slash
+        commands), agents (spawnable subprocesses), hooks (shell triggers), and a persistent file-based memory system.
+        The result is five architectural layers that turn a single-turn tool into something closer to a
+        <em>cognitive operating system</em>&mdash;one that remembers what it learned last week, reviews its own work
+        with adversarial fresh eyes, and restructures its reasoning on demand through empirically validated linguistic
+        constraints.</p>
+
+      <p>This post is the full tour. Every component is generalizable. Nothing here requires my specific project
+        context to work.</p>
+
+      <nav class="toc">
+        <p class="toc__title">In this post</p>
+        <ol class="toc__list">
+          <li><a href="#overview">The five layers</a></li>
+          <li><a href="#orchestration">Orchestration: skills that deploy agent teams</a></li>
+          <li><a href="#lenses">Lenses: constraints that reshape reasoning</a></li>
+          <li><a href="#memory">Memory: epistemic honesty across sessions</a></li>
+          <li><a href="#reflection">Reflection: the system that watches itself</a></li>
+          <li><a href="#hooks">Hooks: the automation backbone</a></li>
+          <li><a href="#composition">How the pieces wire together</a></li>
+          <li><a href="#extensibility">Extensibility: files, not code</a></li>
+          <li><a href="#principles">Design principles</a></li>
+        </ol>
+      </nav>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="overview">The five layers</h2>
+
+      <p>Everything stacks. Each layer depends on the ones below it but can function independently. You could adopt
+        just the lenses, or just the memory system, or just the adversarial review skill. They compose, but they
+        don&rsquo;t require each other.</p>
+
+      <div class="layer-stack" id="layerStack">
+        <div class="layer-bar layer-bar--sky">
+          <span class="layer-bar__number">01</span>
+          <span class="layer-bar__name">Orchestration</span>
+          <span class="layer-bar__desc">Skills that spawn parallel agent teams and synthesize results</span>
+        </div>
+        <div class="layer-bar layer-bar--warm">
+          <span class="layer-bar__number">02</span>
+          <span class="layer-bar__name">Cognitive Lenses</span>
+          <span class="layer-bar__desc">Language constraints that change how agents reason (+7.3pp accuracy)</span>
+        </div>
+        <div class="layer-bar layer-bar--emerald">
+          <span class="layer-bar__number">03</span>
+          <span class="layer-bar__name">Epistemic Memory</span>
+          <span class="layer-bar__desc">Beliefs with confidence metadata, dormancy decay, and tension tracking</span>
+        </div>
+        <div class="layer-bar layer-bar--purple">
+          <span class="layer-bar__number">04</span>
+          <span class="layer-bar__name">Reflection</span>
+          <span class="layer-bar__desc">Mirror, Harvest, Observe &mdash; the system that watches itself learning</span>
+        </div>
+        <div class="layer-bar layer-bar--muted">
+          <span class="layer-bar__number">05</span>
+          <span class="layer-bar__name">Hooks &amp; Automation</span>
+          <span class="layer-bar__desc">Shell triggers and instruction-level auto-behaviors that wire it all together</span>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="orchestration">Layer 1: Orchestration skills</h2>
+
+      <p>A skill is a slash command: you type <code>/parallax</code> or <code>/research</code> and it expands into
+        a multi-step orchestration plan that spawns agents, coordinates their work, and synthesizes the output.
+        The user-facing interface is one word. The machinery behind it can involve three to five parallel agents,
+        each with different constraints, converging into a single synthesized answer.</p>
+
+      <p>Five skills form the orchestration layer. Each one implements a different pattern for deploying
+        cognitive diversity.</p>
+
+      <div class="skill-grid reveal">
+        <div class="skill-card">
+          <div class="skill-card__head">
+            <div class="skill-card__icon" style="background: var(--accent-dim); color: var(--accent-bright);">&#9678;</div>
+            <div class="skill-card__name">Orient</div>
+          </div>
+          <div class="skill-card__pattern">/orient &ldquo;I need to decide X&rdquo;</div>
+          <div class="skill-card__desc">The chief of staff. Surveys the full toolkit&mdash;every skill, lens, agent,
+            and native capability&mdash;then recommends a deployment strategy for your specific problem. It doesn&rsquo;t
+            execute. It teaches you your own toolkit by explaining which tools to reach for and in what order.</div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-card__head">
+            <div class="skill-card__icon" style="background: var(--accent-dim); color: var(--accent-bright);">&#9670;</div>
+            <div class="skill-card__name">Research</div>
+          </div>
+          <div class="skill-card__pattern">/research &ldquo;How do X and Y interact?&rdquo;</div>
+          <div class="skill-card__desc">Decomposes a question into 2&ndash;5 independent facets, spawns a parallel
+            researcher agent for each one, then synthesizes findings. Each researcher works independently (preventing
+            groupthink). The synthesizer maps agreement, divergence, and coverage gaps.</div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-card__head">
+            <div class="skill-card__icon" style="background: var(--purple-dim); color: var(--purple);">&#9672;</div>
+            <div class="skill-card__name">Parallax</div>
+          </div>
+          <div class="skill-card__pattern">/parallax --profile architecture &ldquo;Should we use X?&rdquo;</div>
+          <div class="skill-card__desc">Runs the same query through three cognitively diverse agents simultaneously,
+            each constrained by a different lens. A synthesizer reads all three outputs blind and maps:
+            <strong>blind spots</strong> (what only one lens caught), <strong>divergences</strong> (conflicting framings),
+            and <strong>consensus</strong> (where all three agree).</div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-card__head">
+            <div class="skill-card__icon" style="background: var(--warm-dim); color: var(--warm);">&#9673;</div>
+            <div class="skill-card__name">Constrain</div>
+          </div>
+          <div class="skill-card__pattern">/constrain --depth shallow &ldquo;Analyze this code&rdquo;</div>
+          <div class="skill-card__desc">Tests how a specific linguistic constraint affects problem-solving. Spawns
+            two parallel agents: one constrained, one baseline. The synthesizer compares where they agree, where
+            they diverge, and whether the constraint exposed anything the baseline missed. Three depth levels:
+            shallow (regularizer), medium (no-have), deep (E-Prime).</div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-card__head">
+            <div class="skill-card__icon" style="background: var(--rose-dim); color: var(--rose);">&#9671;</div>
+            <div class="skill-card__name">Scrutinize</div>
+          </div>
+          <div class="skill-card__pattern">/scrutinize paper2.md</div>
+          <div class="skill-card__desc">Adversarial architecture review. Spawns a fresh-context critic that reads
+            your artifact cold&mdash;no creation history, no author bias. The critic delivers structured critique.
+            Then a multi-round dialogue unfolds: advocate responds, critic rebuts, points get resolved into
+            <strong>agreed changes</strong> vs. <strong>contested points</strong>. Fresh eyes catch what the builder&rsquo;s
+            eye skips.</div>
+        </div>
+      </div>
+
+      <p>The common pattern: spawn diverse agents in parallel, let them work independently, then synthesize. The
+        synthesis step is where the real value lives&mdash;surfacing blind spots, divergences, and consensus that
+        no single agent would produce alone.</p>
+
+      <!-- Orchestration flow diagram -->
+      <div class="diagram reveal">
+        <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- Orient -->
+          <rect x="255" y="10" width="130" height="40" rx="8" fill="rgba(77,168,255,0.12)" stroke="rgba(77,168,255,0.4)" stroke-width="1.5" />
+          <text x="320" y="34" text-anchor="middle" fill="#6dc0ff" font-family="Space Grotesk,sans-serif" font-size="13" font-weight="600">Orient</text>
+          <text x="320" y="65" text-anchor="middle" fill="rgba(230,236,245,0.25)" font-family="Inter,sans-serif" font-size="9" font-style="italic">&ldquo;which tool fits this problem?&rdquo;</text>
+
+          <!-- Dashed lines from Orient to skills -->
+          <line x1="280" y1="50" x2="100" y2="95" stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3" />
+          <line x1="300" y1="50" x2="240" y2="95" stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3" />
+          <line x1="340" y1="50" x2="390" y2="95" stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3" />
+          <line x1="360" y1="50" x2="530" y2="95" stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3" />
+
+          <!-- Skill boxes -->
+          <rect x="40" y="95" width="120" height="36" rx="6" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="100" y="118" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Research</text>
+
+          <rect x="185" y="95" width="120" height="36" rx="6" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="245" y="118" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Parallax</text>
+
+          <rect x="330" y="95" width="120" height="36" rx="6" fill="rgba(232,176,74,0.1)" stroke="rgba(232,176,74,0.3)" stroke-width="1" />
+          <text x="390" y="118" text-anchor="middle" fill="#e8b04a" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Constrain</text>
+
+          <rect x="475" y="95" width="120" height="36" rx="6" fill="rgba(251,113,133,0.1)" stroke="rgba(251,113,133,0.3)" stroke-width="1" />
+          <text x="535" y="118" text-anchor="middle" fill="#fb7185" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Scrutinize</text>
+
+          <!-- Agent layer label -->
+          <rect x="20" y="150" width="600" height="22" rx="4" fill="rgba(120,170,255,0.06)" />
+          <text x="320" y="164" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" letter-spacing="0.15em">PARALLEL AGENT EXECUTION</text>
+
+          <!-- Agent dots per skill -->
+          <!-- Research agents -->
+          <circle cx="75" cy="195" r="12" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="75" y="199" text-anchor="middle" fill="rgba(77,168,255,0.6)" font-family="Inter,sans-serif" font-size="8">F1</text>
+          <circle cx="100" cy="195" r="12" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="100" y="199" text-anchor="middle" fill="rgba(77,168,255,0.6)" font-family="Inter,sans-serif" font-size="8">F2</text>
+          <circle cx="125" cy="195" r="12" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="125" y="199" text-anchor="middle" fill="rgba(77,168,255,0.6)" font-family="Inter,sans-serif" font-size="8">F3</text>
+
+          <!-- Parallax agents -->
+          <circle cx="220" cy="195" r="12" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="220" y="199" text-anchor="middle" fill="rgba(167,139,250,0.6)" font-family="Inter,sans-serif" font-size="8">L1</text>
+          <circle cx="245" cy="195" r="12" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="245" y="199" text-anchor="middle" fill="rgba(167,139,250,0.6)" font-family="Inter,sans-serif" font-size="8">L2</text>
+          <circle cx="270" cy="195" r="12" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="270" y="199" text-anchor="middle" fill="rgba(167,139,250,0.6)" font-family="Inter,sans-serif" font-size="8">L3</text>
+
+          <!-- Constrain agents -->
+          <circle cx="375" cy="195" r="12" fill="rgba(232,176,74,0.1)" stroke="rgba(232,176,74,0.3)" stroke-width="1" />
+          <text x="375" y="199" text-anchor="middle" fill="rgba(232,176,74,0.6)" font-family="Inter,sans-serif" font-size="7">CON</text>
+          <circle cx="405" cy="195" r="12" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.15)" stroke-width="1" />
+          <text x="405" y="199" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="7">BASE</text>
+
+          <!-- Scrutinize agents -->
+          <circle cx="520" cy="195" r="12" fill="rgba(251,113,133,0.1)" stroke="rgba(251,113,133,0.3)" stroke-width="1" />
+          <text x="520" y="199" text-anchor="middle" fill="rgba(251,113,133,0.6)" font-family="Inter,sans-serif" font-size="7">CRIT</text>
+          <circle cx="550" cy="195" r="12" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.15)" stroke-width="1" />
+          <text x="550" y="199" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="7">ADV</text>
+
+          <!-- Convergence lines -->
+          <line x1="75" y1="207" x2="320" y2="248" stroke="rgba(120,170,255,0.1)" stroke-width="1" />
+          <line x1="245" y1="207" x2="320" y2="248" stroke="rgba(120,170,255,0.1)" stroke-width="1" />
+          <line x1="390" y1="207" x2="320" y2="248" stroke="rgba(120,170,255,0.1)" stroke-width="1" />
+          <line x1="535" y1="207" x2="320" y2="248" stroke="rgba(120,170,255,0.1)" stroke-width="1" />
+
+          <!-- Synthesizer -->
+          <rect x="230" y="248" width="180" height="36" rx="8" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.2)" stroke-width="1.5" />
+          <text x="320" y="270" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Synthesizer</text>
+          <text x="320" y="295" text-anchor="middle" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="8">blind spots &bull; divergences &bull; consensus</text>
+        </svg>
+        <span class="diagram__caption">Orient recommends tools &rarr; skills spawn parallel agents &rarr; synthesizer integrates</span>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="lenses">Layer 2: Cognitive lenses</h2>
+
+      <p>If I wrote about lenses in my
+        <a href="cognitive-architecture.html">previous post</a>, this is the update after running a 15,600-trial
+        experiment across six frontier models. The hypothesis held: vocabulary constraints measurably restructure
+        model reasoning. But the surprise was <em>which</em> constraints work best.</p>
+
+      <p>Lenses come in two families. <strong>Vocabulary constraints</strong> ban specific words or grammatical
+        structures, forcing the model to route around its default patterns. <strong>Reasoning modifiers</strong>
+        prescribe analytical frameworks that change the shape of the output without touching vocabulary.</p>
+
+      <h3>Vocabulary constraints (empirically validated)</h3>
+
+      <p>These three constraints were tested in a controlled experiment: 130 analytical items, 6 models, 5 conditions
+        each, with stochastic replication. The accuracy gains are real and statistically significant (<em>p</em>&nbsp;&lt;&nbsp;0.001
+        by Fisher&rsquo;s exact test).</p>
+
+      <div class="accuracy-chart reveal" id="accuracyChart">
+        <div class="accuracy-chart__title">Accuracy gain over unconstrained baseline</div>
+
+        <div class="accuracy-row">
+          <div class="accuracy-row__label" style="color: var(--warm);">Regularizer</div>
+          <div class="accuracy-row__track">
+            <div class="accuracy-row__fill" data-width="73" style="background: linear-gradient(90deg, rgba(232,176,74,0.6), var(--warm));">
+            </div>
+          </div>
+          <div class="accuracy-row__gain" style="color: var(--warm);">+7.3pp</div>
+        </div>
+
+        <div class="accuracy-row">
+          <div class="accuracy-row__label" style="color: var(--coral);">No-Have</div>
+          <div class="accuracy-row__track">
+            <div class="accuracy-row__fill" data-width="54" style="background: linear-gradient(90deg, rgba(232,145,109,0.6), var(--coral));">
+            </div>
+          </div>
+          <div class="accuracy-row__gain" style="color: var(--coral);">+5.4pp</div>
+        </div>
+
+        <div class="accuracy-row">
+          <div class="accuracy-row__label" style="color: var(--rose);">E-Prime</div>
+          <div class="accuracy-row__track">
+            <div class="accuracy-row__fill" data-width="37" style="background: linear-gradient(90deg, rgba(251,113,133,0.6), var(--rose));">
+            </div>
+          </div>
+          <div class="accuracy-row__gain" style="color: var(--rose);">+3.7pp</div>
+        </div>
+      </div>
+
+      <p>The punchline is counterintuitive: <strong>the lightest constraint wins</strong>. The regularizer just bans
+        18 filler words&mdash;<em>very, quite, rather, somewhat, really, pretty, just, simply, basically, actually,
+          literally, definitely, certainly, obviously, clearly, essentially, virtually, practically</em>&mdash;and it
+        produces the largest accuracy gain with near-zero compliance cost. E-Prime, the deepest constraint (banning all
+        forms of &ldquo;to be&rdquo;), improves accuracy less and costs dramatically more: 45.6% of trials need
+        retries for compliance violations.</p>
+
+      <p>Why? The working theory: shallow constraints disrupt the model&rsquo;s default &ldquo;fluency
+        autopilot&rdquo;&mdash;the pattern of generating smooth, confident-sounding text that papers over analytical
+        gaps. Removing filler words doesn&rsquo;t change what the model <em>can</em> think, but it removes the
+        linguistic shorthand that lets it <em>skip</em> thinking. Deep constraints do something different: they force
+        genuinely novel cognitive patterns (E-Prime makes you describe relationships instead of categories), which
+        produces more <em>diverse</em> reasoning but isn&rsquo;t as reliably more <em>accurate</em>.</p>
+
+      <p>This maps directly to infrastructure. The regularizer auto-applies to every unlensed agent as a free
+        accuracy boost. The deeper constraints deploy when you want cognitive diversity, not when you want
+        precision.</p>
+
+      <h3>Reasoning modifiers</h3>
+
+      <div class="lens-grid reveal">
+        <div class="lens-card" style="--card-accent: var(--purple);">
+          <div class="lens-card__name">Counterfactual</div>
+          <div class="lens-card__desc">For every assumption, explore what breaks if it were false. Finds hidden
+            dependencies.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--coral);">
+          <div class="lens-card__name">Analogical</div>
+          <div class="lens-card__desc">Map findings to cross-domain parallels (biology, architecture, cooking) before
+            stating them directly.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--text-secondary);">
+          <div class="lens-card__name">Minimal</div>
+          <div class="lens-card__desc">Absolute minimum words. Every word earns its place or gets cut. No jargon,
+            no hedging.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--teal);">
+          <div class="lens-card__name">Evidential</div>
+          <div class="lens-card__desc">Tag every claim: [observed], [inferred], [assumed], [uncertain]. Separates
+            knowledge from guessing.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--accent);">
+          <div class="lens-card__name">First Principles</div>
+          <div class="lens-card__desc">Derive from axioms only. No conventions, no best practices, no appeals to
+            authority.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--emerald);">
+          <div class="lens-card__name">Process-Only</div>
+          <div class="lens-card__desc">Everything expressed as process, flow, and transformation. Nothing &ldquo;is&rdquo;
+            anything; things happen.</div>
+        </div>
+        <div class="lens-card" style="--card-accent: var(--warm);">
+          <div class="lens-card__name">Steel-Man</div>
+          <div class="lens-card__desc">Build the strongest possible defense of the status quo before identifying where
+            it breaks.</div>
+        </div>
+      </div>
+
+      <p>Each lens lives in a single markdown file in <code>.claude/agents/</code>. Add a new file, and every skill
+        that composes lenses can use it immediately. No code changes. The directory is the interface.</p>
+
+      <h3>Lens profiles for Parallax</h3>
+
+      <p>Parallax ships with pre-configured lens combinations tuned for specific problem types:</p>
+
+      <div class="diagram reveal">
+        <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Profile rows -->
+          <text x="10" y="20" fill="rgba(230,236,245,0.25)" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" letter-spacing="0.1em">PROFILE</text>
+          <text x="200" y="20" fill="rgba(230,236,245,0.25)" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" letter-spacing="0.1em">LENS 1</text>
+          <text x="340" y="20" fill="rgba(230,236,245,0.25)" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" letter-spacing="0.1em">LENS 2</text>
+          <text x="480" y="20" fill="rgba(230,236,245,0.25)" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" letter-spacing="0.1em">LENS 3</text>
+
+          <line x1="0" y1="30" x2="640" y2="30" stroke="rgba(120,170,255,0.08)" stroke-width="1" />
+
+          <!-- debug -->
+          <text x="10" y="52" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="600">debug</text>
+          <text x="90" y="52" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9">root cause analysis</text>
+          <rect x="200" y="38" width="100" height="22" rx="4" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.2)" stroke-width="0.5" />
+          <text x="250" y="53" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Counterfactual</text>
+          <rect x="340" y="38" width="100" height="22" rx="4" fill="rgba(232,145,109,0.08)" stroke="rgba(232,145,109,0.2)" stroke-width="0.5" />
+          <text x="390" y="53" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Analogical</text>
+          <rect x="480" y="38" width="100" height="22" rx="4" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.15)" stroke-width="0.5" />
+          <text x="530" y="53" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Minimal</text>
+
+          <!-- architecture -->
+          <line x1="0" y1="68" x2="640" y2="68" stroke="rgba(120,170,255,0.05)" stroke-width="1" />
+          <text x="10" y="90" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="600">architecture</text>
+          <text x="120" y="90" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9">design decisions</text>
+          <rect x="200" y="76" width="100" height="22" rx="4" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.2)" stroke-width="0.5" />
+          <text x="250" y="91" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">First Principles</text>
+          <rect x="340" y="76" width="100" height="22" rx="4" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)" stroke-width="0.5" />
+          <text x="390" y="91" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Process-Only</text>
+          <rect x="480" y="76" width="100" height="22" rx="4" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.2)" stroke-width="0.5" />
+          <text x="530" y="91" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Steel-Man</text>
+
+          <!-- decision -->
+          <line x1="0" y1="106" x2="640" y2="106" stroke="rgba(120,170,255,0.05)" stroke-width="1" />
+          <text x="10" y="128" fill="#e8b04a" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="600">decision</text>
+          <text x="85" y="128" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9">choices under uncertainty</text>
+          <rect x="200" y="114" width="100" height="22" rx="4" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.2)" stroke-width="0.5" />
+          <text x="250" y="129" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Counterfactual</text>
+          <rect x="340" y="114" width="100" height="22" rx="4" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.2)" stroke-width="0.5" />
+          <text x="390" y="129" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">First Principles</text>
+          <rect x="480" y="114" width="100" height="22" rx="4" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.2)" stroke-width="0.5" />
+          <text x="530" y="129" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Steel-Man</text>
+
+          <!-- regularize -->
+          <line x1="0" y1="144" x2="640" y2="144" stroke="rgba(120,170,255,0.05)" stroke-width="1" />
+          <text x="10" y="166" fill="#34d399" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="600">regularize</text>
+          <text x="105" y="166" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9">accuracy-optimized</text>
+          <rect x="200" y="152" width="100" height="22" rx="4" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.2)" stroke-width="0.5" />
+          <text x="250" y="167" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Regularizer</text>
+          <rect x="340" y="152" width="100" height="22" rx="4" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.2)" stroke-width="0.5" />
+          <text x="390" y="167" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Counterfactual</text>
+          <rect x="480" y="152" width="100" height="22" rx="4" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.2)" stroke-width="0.5" />
+          <text x="530" y="167" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">First Principles</text>
+
+          <!-- writing -->
+          <line x1="0" y1="182" x2="640" y2="182" stroke="rgba(120,170,255,0.05)" stroke-width="1" />
+          <text x="10" y="200" fill="#fb7185" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="600">writing</text>
+          <text x="75" y="200" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9">prose improvement</text>
+          <rect x="200" y="188" width="100" height="22" rx="4" fill="rgba(232,145,109,0.08)" stroke="rgba(232,145,109,0.2)" stroke-width="0.5" />
+          <text x="250" y="203" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">No-Possession</text>
+          <rect x="340" y="188" width="100" height="22" rx="4" fill="rgba(45,212,191,0.08)" stroke="rgba(45,212,191,0.2)" stroke-width="0.5" />
+          <text x="390" y="203" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Evidential</text>
+          <rect x="480" y="188" width="100" height="22" rx="4" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.15)" stroke-width="0.5" />
+          <text x="530" y="203" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="10">Minimal</text>
+        </svg>
+        <span class="diagram__caption">Pre-configured lens combinations &mdash; each profile optimized for a specific problem type</span>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="memory">Layer 3: Epistemic memory</h2>
+
+      <p>Most AI memory systems work like append-only logs: save facts, retrieve facts, done. This one works more
+        like a belief system. Every piece of stored knowledge carries metadata about <em>how confident the system
+          should be in it</em>&mdash;and that confidence changes over time.</p>
+
+      <h3>Beliefs, not facts</h3>
+
+      <p>A belief isn&rsquo;t a fact. It&rsquo;s an interpretation that the system holds with some degree of
+        confidence, tracked explicitly:</p>
+
+      <div class="belief-demo reveal">
+        <span class="belief-demo__key">belief:</span> <span class="belief-demo__val">&ldquo;Prefers bundled PRs over many small ones for refactors&rdquo;</span><br />
+        <span class="belief-demo__key">conf:</span> <span class="belief-demo__val">0.65</span>
+        <span class="belief-demo__comment">&nbsp;&nbsp;# developing &mdash; seen twice, could be situational</span><br />
+        <span class="belief-demo__key">permanence:</span> <span class="belief-demo__val">durable</span>
+        <span class="belief-demo__comment">&nbsp;&nbsp;# working pattern, ~year timescale</span><br />
+        <span class="belief-demo__key">first:</span> <span class="belief-demo__val">2026-03-15</span><br />
+        <span class="belief-demo__key">confirmed:</span> <span class="belief-demo__val">2026-03-28</span>
+        <span class="belief-demo__comment">&nbsp;&nbsp;# last session consistent with this</span><br />
+        <span class="belief-demo__key">challenged:</span> <span class="belief-demo__val">null</span>
+        <span class="belief-demo__comment">&nbsp;&nbsp;# nothing contradicted it yet</span>
+      </div>
+
+      <p>The confidence scale runs from speculative (0.0&ndash;0.2, inferred but never observed) through established
+        (0.7&ndash;0.8, consistent across many sessions) to factual (0.9&ndash;1.0, reserved for verified facts only).
+        Confidence gets <em>earned</em> through repeated observation, not assigned by how insightful a belief
+        sounds.</p>
+
+      <h3>Dormancy decay</h3>
+
+      <p>Here&rsquo;s the part that surprised me most in practice: confidence isn&rsquo;t static. If the system
+        goes dormant (30+ days without sessions), beliefs attenuate exponentially based on how permanent they are:</p>
+
+      <div class="decay-viz reveal" id="decayViz">
+        <div class="decay-viz__title">Effective confidence after 6 months dormant</div>
+
+        <div class="decay-row">
+          <div class="decay-row__label" style="color: var(--emerald);">Stable</div>
+          <div class="decay-row__track">
+            <div class="decay-row__dot" data-pos="83" style="border-color: var(--emerald); background: rgba(52,211,153,0.2);"></div>
+          </div>
+          <div class="decay-row__half">~2yr half-life</div>
+        </div>
+
+        <div class="decay-row">
+          <div class="decay-row__label" style="color: var(--warm);">Durable</div>
+          <div class="decay-row__track">
+            <div class="decay-row__dot" data-pos="41" style="border-color: var(--warm); background: rgba(232,176,74,0.2);"></div>
+          </div>
+          <div class="decay-row__half">~5mo half-life</div>
+        </div>
+
+        <div class="decay-row">
+          <div class="decay-row__label" style="color: var(--rose);">Situational</div>
+          <div class="decay-row__track">
+            <div class="decay-row__dot" data-pos="20" style="border-color: var(--rose); background: rgba(251,113,133,0.2);"></div>
+          </div>
+          <div class="decay-row__half">~6wk half-life</div>
+        </div>
+      </div>
+
+      <p>A belief like &ldquo;heritage is Ghanaian&rdquo; (stable, factual) barely decays across years.
+        A belief like &ldquo;currently frustrated with the auth migration&rdquo; (situational, 0.5 confidence)
+        is nearly floor after two months. This makes staleness <em>visible</em> as a gradient rather than a cliff
+        edge&mdash;and prevents the system from confidently acting on months-old situational reads.</p>
+
+      <h3>Tensions, not overwrites</h3>
+
+      <p>When new observations contradict existing beliefs, most systems silently update. This one creates a
+        <strong>tension</strong>&mdash;a dated record that says &ldquo;belief A and observation B don&rsquo;t
+        agree, and we&rsquo;re watching.&rdquo; Real people are contradictory. A profile that fits too neatly
+        is probably just a comfortable reduction.</p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="reflection">Layer 4: Reflection</h2>
+
+      <p>The memory system stores beliefs. The reflection layer is what <em>maintains</em> them&mdash;the
+        self-watching machinery that keeps the belief system honest over time.</p>
+
+      <h3>Observe</h3>
+
+      <p>Running at two speeds simultaneously. <strong>Live mode</strong> fires mid-conversation when it notices
+        a judgment call, pushback, process signal, or unprompted reveal. <strong>Harvest mode</strong> runs at the
+        end of every substantive session as a backstop. Both write to the same observation log:</p>
+
+      <div class="obs-demo reveal">
+        <span class="obs-demo__field">Evidence:</span> <span class="obs-demo__value">User pushed back on splitting the PR, said &ldquo;one bundled PR is the right call here.&rdquo;</span><br />
+        <span class="obs-demo__field">Suggests:</span> <span class="obs-demo__value">Prefers pragmatic grouping over conventional small-PR discipline for refactors.</span><br />
+        <span class="obs-demo__field">Therefore:</span> <span class="obs-demo__value">For future refactors in this area, default to bundled PRs unless scope is truly independent.</span><br />
+        <span class="obs-demo__field">Connects to:</span> <span class="obs-demo__value">PR-style preference (new)</span><br />
+        <span class="obs-demo__field">Strength:</span> <span class="obs-demo__value">single</span>
+      </div>
+
+      <p>Quality gate: nothing gets written unless the <code>Therefore</code> field would change future behavior.
+        No journaling for journaling&rsquo;s sake.</p>
+
+      <h3>Mirror</h3>
+
+      <p>Four modes that run on cadence (every 10 sessions or monthly):</p>
+
+      <ul>
+        <li><strong>Portrait</strong>&mdash;prose character study with blind spots and contradictions</li>
+        <li><strong>Audit</strong>&mdash;epistemological dashboard: confidence distributions, drift, staleness flags</li>
+        <li><strong>Gut-check</strong>&mdash;quick validation of 6 beliefs (3 strongest, 3 weakest)</li>
+        <li><strong>Interview</strong>&mdash;8&ndash;12 structured questions generated from blind spots and tensions</li>
+      </ul>
+
+      <p>The <strong>Portrait</strong> mode also promotes observations to beliefs: when 2+ observations cluster
+        around the same pattern, they graduate to a belief at low initial confidence (0.30&ndash;0.40). The system
+        learns, but slowly and skeptically.</p>
+
+      <h3>Harvest</h3>
+
+      <p>End-of-session knowledge extraction. Scans the conversation for insights, decisions, and facts, then
+        proposes them as new or updated entries in a knowledge graph. Dual-writes everything: native storage
+        <em>and</em> the graph, with bidirectional wikilinks for discoverability. Runs observe as its final step,
+        making it a single atomic operation: extract knowledge <em>and</em> collect behavioral evidence.</p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="hooks">Layer 5: Hooks &amp; automation</h2>
+
+      <p>The glue layer. Shell hooks fire on specific events; instruction-level auto-behaviors handle the rest.</p>
+
+      <table class="hook-table reveal">
+        <thead>
+          <tr>
+            <th>Trigger</th>
+            <th>Hook</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SessionStart</td>
+            <td>Detects pending session handoffs, reports system status</td>
+            <td>Picks up where the last session left off without manual context-loading</td>
+          </tr>
+          <tr>
+            <td>SessionStart</td>
+            <td>Re-injects CLAUDE.md after context compaction</td>
+            <td>Long conversations compress old messages; this ensures instructions survive</td>
+          </tr>
+          <tr>
+            <td>Pre-Edit</td>
+            <td>Protected file guard</td>
+            <td>Prevents accidental writes to locked files (analysis plans, configs)</td>
+          </tr>
+          <tr>
+            <td>Post-Edit</td>
+            <td>Auto-format HTML</td>
+            <td>Keeps HTML files formatted consistently after every change</td>
+          </tr>
+          <tr>
+            <td>End of session</td>
+            <td>Auto-harvest (instruction-level)</td>
+            <td>Extracts knowledge + runs observe automatically. No manual trigger needed</td>
+          </tr>
+          <tr>
+            <td>Mid-session</td>
+            <td>Live observe (instruction-level)</td>
+            <td>Ambient behavioral evidence collection. Writes observations in real time</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The last two aren&rsquo;t traditional shell hooks&mdash;they&rsquo;re behaviors defined in CLAUDE.md
+        (the master instruction file) that the model executes as part of its conversational loop. The distinction
+        matters: shell hooks are deterministic triggers; instruction-level behaviors are probabilistic but pervasive.
+        Together they create a system that maintains itself.</p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="composition">How the pieces wire together</h2>
+
+      <p>Three primary composition patterns emerge from the architecture. Each one connects layers that were designed
+        independently but compose naturally.</p>
+
+      <h3>Analysis pipeline</h3>
+      <div class="flow reveal">
+        <div class="flow__step" style="background: var(--accent-dim); color: var(--accent-bright);">Orient</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--accent-dim); color: var(--accent-bright);">Research</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--purple-dim); color: var(--purple);">Parallax</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--emerald-dim); color: var(--emerald);">Decision</div>
+      </div>
+      <p>Orient selects the right tools. Research gathers evidence across facets. Parallax triangulates the
+        decision through diverse lenses. You decide with the full picture.</p>
+
+      <h3>Production pipeline</h3>
+      <div class="flow reveal">
+        <div class="flow__step" style="background: rgba(120,170,255,0.05); color: var(--text-secondary);">Build</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--rose-dim); color: var(--rose);">Scrutinize</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--warm-dim); color: var(--warm);">Revise</div>
+        <span class="flow__arrow">&rarr;</span>
+        <div class="flow__step" style="background: var(--emerald-dim); color: var(--emerald);">Harvest</div>
+      </div>
+      <p>Build the artifact. Scrutinize it with fresh-context adversarial review. Apply agreed changes. Harvest
+        extracts what you learned and observes how you worked.</p>
+
+      <h3>Learning loop (cross-session)</h3>
+
+      <div class="diagram reveal">
+        <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+          <!-- Nodes -->
+          <rect x="20" y="30" width="120" height="36" rx="6" fill="rgba(120,170,255,0.06)" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
+          <text x="80" y="52" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Conversation</text>
+
+          <rect x="170" y="30" width="100" height="36" rx="6" fill="rgba(45,212,191,0.08)" stroke="rgba(45,212,191,0.25)" stroke-width="1" />
+          <text x="220" y="52" text-anchor="middle" fill="#2dd4bf" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Observe</text>
+
+          <rect x="300" y="30" width="100" height="36" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" stroke-width="1" />
+          <text x="350" y="52" text-anchor="middle" fill="#34d399" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Harvest</text>
+
+          <rect x="430" y="30" width="100" height="36" rx="6" fill="rgba(45,212,191,0.08)" stroke="rgba(45,212,191,0.25)" stroke-width="1" />
+          <text x="480" y="52" text-anchor="middle" fill="#2dd4bf" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Observations</text>
+
+          <rect x="430" y="100" width="100" height="36" rx="6" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.25)" stroke-width="1" />
+          <text x="480" y="122" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Mirror</text>
+
+          <rect x="210" y="100" width="100" height="36" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" stroke-width="1" />
+          <text x="260" y="122" text-anchor="middle" fill="#34d399" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">Beliefs</text>
+
+          <!-- Arrows -->
+          <line x1="140" y1="48" x2="168" y2="48" stroke="rgba(45,212,191,0.4)" stroke-width="1.5" marker-end="url(#arrowTeal)" />
+          <line x1="270" y1="48" x2="298" y2="48" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" marker-end="url(#arrowGreen)" />
+          <line x1="400" y1="48" x2="428" y2="48" stroke="rgba(45,212,191,0.4)" stroke-width="1.5" marker-end="url(#arrowTeal)" />
+          <line x1="480" y1="66" x2="480" y2="98" stroke="rgba(167,139,250,0.4)" stroke-width="1.5" marker-end="url(#arrowPurple)" />
+          <line x1="430" y1="118" x2="312" y2="118" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" marker-end="url(#arrowGreen)" />
+          <line x1="210" y1="118" x2="80" y2="70" stroke="rgba(120,170,255,0.2)" stroke-width="1.5" stroke-dasharray="4 3" />
+
+          <!-- Arrow markers -->
+          <defs>
+            <marker id="arrowTeal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0,0 8,3 0,6" fill="rgba(45,212,191,0.5)" />
+            </marker>
+            <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0,0 8,3 0,6" fill="rgba(52,211,153,0.5)" />
+            </marker>
+            <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0,0 8,3 0,6" fill="rgba(167,139,250,0.5)" />
+            </marker>
+          </defs>
+
+          <!-- Cadence labels -->
+          <text x="220" y="170" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9" font-style="italic">every session</text>
+          <text x="430" y="170" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9" font-style="italic">every ~10 sessions</text>
+        </svg>
+        <span class="diagram__caption">Conversations produce observations &rarr; observations accumulate &rarr; Mirror synthesizes into belief updates &rarr; beliefs inform future conversations</span>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="extensibility">Extensibility: files, not code</h2>
+
+      <p>The architecture grows by file addition. No code edits required for any of these:</p>
+
+      <ul>
+        <li><strong>New lens:</strong> create <code>.claude/agents/my-lens.md</code> with a <code>type: lens</code>
+          header and a constraint body. Immediately available to Parallax, Research, Constrain, and Orient.</li>
+        <li><strong>New skill:</strong> create <code>.claude/skills/my-skill/SKILL.md</code> with trigger definitions
+          and instructions. Available as <code>/my-skill</code> instantly.</li>
+        <li><strong>New memory category:</strong> create an index file. The memory routing skill auto-discovers it.</li>
+        <li><strong>New Parallax profile:</strong> edit one table in the skill file. Three lenses, a name, done.</li>
+      </ul>
+
+      <p>This is what makes the system <em>generative</em> rather than just configurable. The directory structure
+        <em>is</em> the API. Anyone who can write a markdown file can extend the cognitive architecture.</p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════ -->
+      <h2 id="principles">Design principles</h2>
+
+      <p>After months of building and iterating, these are the principles that survived contact with daily use:</p>
+
+      <ol>
+        <li><strong>Composition over monoliths.</strong> Skills orchestrate agents. Agents are parameterized by
+          lenses. Small, recombinant pieces scale better than feature-rich single tools. A new lens multiplies
+          the capability of every skill that uses lenses.</li>
+
+        <li><strong>Parallel execution by default.</strong> Research spawns parallel investigators. Parallax runs
+          three lenses simultaneously. Constrain tests two agents side by side. Fresh contexts prevent groupthink
+          and surface genuine blind spots. Serial execution is the exception.</li>
+
+        <li><strong>Shallow constraints beat deep ones.</strong> The biggest empirical surprise. Banning 18 filler
+          words (+7.3pp accuracy) outperforms banning all forms of &ldquo;to be&rdquo; (+3.7pp). The regularizer
+          auto-applies to every unlensed agent as a free accuracy boost. Deep constraints deploy when you want
+          <em>diversity</em>, not precision.</li>
+
+        <li><strong>Confidence is earned, not assigned.</strong> Beliefs start at low confidence and climb through
+          repeated confirming observations. Dormancy decay makes staleness visible. Contradictions create tensions
+          rather than silent overwrites. The system stays humble about what it knows.</li>
+
+        <li><strong>Behavior over self-report.</strong> The observe skill tracks what users <em>do</em> under
+          pressure&mdash;not what they say about themselves. When the two diverge, a tension is logged rather than
+          smoothing over the contradiction.</li>
+
+        <li><strong>Fresh-context critique as default.</strong> Scrutinize&rsquo;s critic has no creation history.
+          It reads the artifact cold. This prevents the author bias that makes it nearly impossible to review your
+          own work honestly. The same principle applies to every synthesizer: it reads agent outputs without knowing
+          which agent produced which output.</li>
+
+        <li><strong>The directory is the interface.</strong> New capabilities are files, not code changes. The system
+          grows by addition. This makes it inspectable (read the files to understand the system), forkable (copy
+          the directory), and collaborative (PRs are just markdown changes).</li>
+
+        <li><strong>Reflexive observation.</strong> The system observes itself observing the user. Live observation
+          catches real-time signals. Harvest backstop catches what live mode missed. Mirror synthesizes both into
+          profile updates. No external auditor required&mdash;the review loop is built into the architecture
+          itself.</li>
+      </ol>
+
+      <hr />
+
+      <p>The theoretical foundation for this work is
+        <a href="https://en.wikipedia.org/wiki/Umwelt" target="_blank" rel="noopener">Umwelt Engineering</a>&mdash;a
+        framework for designing the linguistic world an AI agent can think in. Lenses implement umwelt constraints.
+        The empirical grounding comes from a 15,600-trial experiment across six frontier models, which will be
+        published as &ldquo;Cognitive Restructuring in Frontier Language Models.&rdquo; The core finding: even
+        trivial vocabulary constraints produce statistically significant reasoning improvements, because they
+        subtract the linguistic shortcuts that let models skip past analytical depth.</p>
+
+      <p>Everything described here is built from Claude Code&rsquo;s existing extension points: skills, agents,
+        hooks, and file-based memory. No custom APIs, no model modifications, no external services. Just markdown
+        files and shell scripts, composed into something that thinks about how it thinks.</p>
+
+      <div class="colophon">
+        <p>Built and maintained with Claude Code. The infrastructure described in this post is the same infrastructure
+          that helped write this post.</p>
+      </div>
+
+    </div>
+  </article>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rod@rodspeed.ai">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 RodSpeed</span>
+  </footer>
+
+  <!-- ── Scroll-triggered animations ───────────────────────────── -->
+  <script>
+    // Intersection Observer for reveal animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // Don't unobserve — let it stay visible
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Layer stack staggered entrance
+    const stackObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const bars = entry.target.querySelectorAll('.layer-bar');
+          bars.forEach((bar, i) => {
+            setTimeout(() => bar.classList.add('visible'), i * 120);
+          });
+          stackObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    const layerStack = document.getElementById('layerStack');
+    if (layerStack) stackObserver.observe(layerStack);
+
+    // Accuracy bar animation
+    const chartObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.accuracy-row__fill').forEach(fill => {
+            const width = fill.dataset.width;
+            setTimeout(() => { fill.style.width = width + '%'; }, 200);
+          });
+          chartObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const chart = document.getElementById('accuracyChart');
+    if (chart) chartObserver.observe(chart);
+
+    // Decay dot animation
+    const decayObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.decay-row__dot').forEach(dot => {
+            const pos = dot.dataset.pos;
+            setTimeout(() => { dot.style.left = pos + '%'; }, 300);
+          });
+          decayObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const decay = document.getElementById('decayViz');
+    if (decay) decayObserver.observe(decay);
+  </script>
+
+</body>
+</html>
