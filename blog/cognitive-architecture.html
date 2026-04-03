@@ -1,453 +1,514 @@
+1
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cognitive Lenses for Claude Code: Markdown Files That Change How the Model Reasons &mdash; RodSpeed</title>
-  <meta name="description" content="Most people customize what their AI knows. I customized how it thinks — nine cognitive lenses, three functional roles, and an ensemble architecture that wires them into skills." />
-  <meta property="og:title" content="Cognitive Lenses for Claude Code: Markdown Files That Change How the Model Reasons" />
-  <meta property="og:description" content="Lenses, roles, ensembles, and a feedback loop that learns — the cognitive architecture inside my Claude Code setup." />
+  <meta name="description"
+    content="Most people customize what their AI knows. I customized how it thinks — ten cognitive lenses, five functional roles, and an ensemble architecture that wires them into skills." />
+  <meta property="og:title"
+    content="Cognitive Lenses for Claude Code: Markdown Files That Change How the Model Reasons" />
+  <meta property="og:description"
+    content="Lenses, roles, ensembles, and a feedback loop that learns — the cognitive architecture inside my Claude Code setup." />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://rodspeed.ai/blog/cognitive-architecture.html" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap"
+    rel="stylesheet" />
   <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-:root {
-  --bg: #0d1b30;
-  --bg-light: #11223d;
-  --accent: #4da8ff;
-  --accent-bright: #6dc0ff;
-  --accent-electric: #3d9aff;
-  --accent-dim: rgba(77, 168, 255, 0.1);
-  --accent-glow: rgba(77, 168, 255, 0.35);
-  --warm: #e8b04a;
-  --warm-dim: rgba(232, 176, 74, 0.1);
-  --purple: #a78bfa;
-  --coral: #e8916d;
-  --surface: rgba(120, 170, 255, 0.05);
-  --border: rgba(120, 170, 255, 0.1);
-  --border-bright: rgba(120, 170, 255, 0.2);
-  --text-primary: #e6ecf5;
-  --text-secondary: rgba(230, 236, 245, 0.65);
-  --text-muted: rgba(230, 236, 245, 0.3);
-  --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-prose: 'Newsreader', Georgia, serif;
-}
+    html {
+      scroll-behavior: smooth;
+    }
 
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text-secondary);
-  min-height: 100vh;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
+    :root {
+      --bg: #0d1b30;
+      --bg-light: #11223d;
+      --accent: #4da8ff;
+      --accent-bright: #6dc0ff;
+      --accent-electric: #3d9aff;
+      --accent-dim: rgba(77, 168, 255, 0.1);
+      --accent-glow: rgba(77, 168, 255, 0.35);
+      --warm: #e8b04a;
+      --warm-dim: rgba(232, 176, 74, 0.1);
+      --purple: #a78bfa;
+      --coral: #e8916d;
+      --surface: rgba(120, 170, 255, 0.05);
+      --border: rgba(120, 170, 255, 0.1);
+      --border-bright: rgba(120, 170, 255, 0.2);
+      --text-primary: #e6ecf5;
+      --text-secondary: rgba(230, 236, 245, 0.65);
+      --text-muted: rgba(230, 236, 245, 0.3);
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-prose: 'Newsreader', Georgia, serif;
+    }
 
-::selection {
-  background: var(--accent-dim);
-  color: var(--text-primary);
-}
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-secondary);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-bright); }
+    ::selection {
+      background: var(--accent-dim);
+      color: var(--text-primary);
+    }
 
-/* Background texture */
-.bg-weave {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
-    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
-}
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
 
-.bg-noise {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.02;
-}
+    a:hover {
+      color: var(--accent-bright);
+    }
 
-/* Nav */
-.nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 200;
-  background: rgba(13, 27, 48, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border);
-}
+    /* Background texture */
+    .bg-weave {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100, 160, 255, 0.02) 3px, rgba(100, 160, 255, 0.02) 4px, transparent 4px, transparent 8px),
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80, 140, 240, 0.016) 3px, rgba(80, 140, 240, 0.016) 4px, transparent 4px, transparent 8px);
+    }
 
-.nav__inner {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 40px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+    .bg-noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.02;
+    }
 
-.nav__name {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.04em;
-}
+    /* Nav */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: rgba(13, 27, 48, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
 
-.nav__back {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: color 0.3s;
-}
+    .nav__inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-.nav__back:hover { color: var(--text-primary); }
+    .nav__name {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
 
-/* Article */
-.article {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 120px 40px 120px;
-}
+    .nav__back {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
 
-.article__type {
-  font-family: var(--font-heading);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent-bright);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
+    .nav__back:hover {
+      color: var(--text-primary);
+    }
 
-.article__type::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-bright);
-  box-shadow: 0 0 8px var(--accent);
-}
+    /* Article */
+    .article {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 120px 40px 120px;
+    }
 
-.article__title {
-  font-family: var(--font-heading);
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin-bottom: 16px;
-}
+    .article__type {
+      font-family: var(--font-heading);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
 
-.article__date {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 48px;
-}
+    .article__type::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-bright);
+      box-shadow: 0 0 8px var(--accent);
+    }
 
-/* Prose */
-.prose {
-  font-family: var(--font-prose);
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: var(--text-secondary);
-}
+    .article__title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
 
-.prose p {
-  margin-bottom: 1.5em;
-}
+    .article__date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+    }
 
-.prose h2 {
-  font-family: var(--font-heading);
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-top: 3em;
-  margin-bottom: 0.8em;
-  letter-spacing: -0.01em;
-}
+    /* Prose */
+    .prose {
+      font-family: var(--font-prose);
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
 
-.prose h2:first-child {
-  margin-top: 0;
-}
+    .prose p {
+      margin-bottom: 1.5em;
+    }
 
-.prose strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
+    .prose h2 {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 3em;
+      margin-bottom: 0.8em;
+      letter-spacing: -0.01em;
+    }
 
-.prose em {
-  font-style: italic;
-  color: var(--accent-bright);
-}
+    .prose h2:first-child {
+      margin-top: 0;
+    }
 
-.prose hr {
-  border: none;
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--border-bright), transparent);
-  margin: 3em 0;
-}
+    .prose strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
 
-.prose blockquote {
-  border-left: 2px solid var(--accent);
-  padding-left: 20px;
-  margin: 2em 0;
-  color: var(--text-secondary);
-  font-style: italic;
-}
+    .prose em {
+      font-style: italic;
+      color: var(--accent-bright);
+    }
 
-.prose code {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 0.88em;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 6px;
-  color: var(--accent-bright);
-}
+    .prose hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+      margin: 3em 0;
+    }
 
-.prose pre {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px 24px;
-  margin: 2em 0;
-  overflow-x: auto;
-}
+    .prose blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: 20px;
+      margin: 2em 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
 
-.prose pre code {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.85em;
-  line-height: 1.6;
-  color: var(--text-secondary);
-}
+    .prose code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.88em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--accent-bright);
+    }
 
-.prose ol, .prose ul {
-  margin-bottom: 1.5em;
-  padding-left: 1.5em;
-}
+    .prose pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 2em 0;
+      overflow-x: auto;
+    }
 
-.prose li {
-  margin-bottom: 0.5em;
-}
+    .prose pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.85em;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
 
-.prose li strong {
-  color: var(--accent-bright);
-}
+    .prose ol,
+    .prose ul {
+      margin-bottom: 1.5em;
+      padding-left: 1.5em;
+    }
 
-/* Repo link */
-.repo-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 1.5em 0;
-  padding: 10px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  transition: border-color 0.2s, color 0.2s;
-}
-.repo-link:hover { border-color: var(--accent); color: var(--text-primary); }
-.repo-link svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+    .prose li {
+      margin-bottom: 0.5em;
+    }
 
-/* Table of contents */
-.toc {
-  margin: 2em 0;
-  padding: 20px 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
+    .prose li strong {
+      color: var(--accent-bright);
+    }
 
-.toc__title {
-  font-family: var(--font-heading);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
+    /* Repo link */
+    .repo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 1.5em 0;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: border-color 0.2s, color 0.2s;
+    }
 
-.toc__list {
-  list-style: none;
-  padding-left: 0;
-  margin-bottom: 0;
-  counter-reset: toc;
-}
+    .repo-link:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
 
-.toc__list li {
-  counter-increment: toc;
-  margin-bottom: 6px;
-}
+    .repo-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
 
-.toc__list li::before {
-  content: counter(toc) ".";
-  display: inline-block;
-  width: 24px;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-}
+    /* Table of contents */
+    .toc {
+      margin: 2em 0;
+      padding: 20px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
 
-.toc__list a {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  transition: color 0.2s;
-}
+    .toc__title {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
 
-.toc__list a:hover {
-  color: var(--accent-bright);
-}
+    .toc__list {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 0;
+      counter-reset: toc;
+    }
 
-/* Diagrams */
-.diagram {
-  margin: 2.5em 0;
-  padding: 32px 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow-x: auto;
-}
+    .toc__list li {
+      counter-increment: toc;
+      margin-bottom: 6px;
+    }
 
-.diagram svg {
-  display: block;
-  margin: 0 auto;
-  max-width: 100%;
-  height: auto;
-}
+    .toc__list li::before {
+      content: counter(toc) ".";
+      display: inline-block;
+      width: 24px;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+    }
 
-.diagram__caption {
-  display: block;
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-top: 16px;
-  letter-spacing: 0.04em;
-}
+    .toc__list a {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
 
-/* Lens grid */
-.lens-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  margin: 2em 0;
-}
+    .toc__list a:hover {
+      color: var(--accent-bright);
+    }
 
-.lens-card {
-  padding: 16px 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  transition: border-color 0.2s;
-}
+    /* Diagrams */
+    .diagram {
+      margin: 2.5em 0;
+      padding: 32px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow-x: auto;
+    }
 
-.lens-card:hover {
-  border-color: var(--border-bright);
-}
+    .diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
 
-.lens-card__name {
-  font-family: var(--font-heading);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--accent-bright);
-  letter-spacing: 0.02em;
-  margin-bottom: 6px;
-}
+    .diagram__caption {
+      display: block;
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 16px;
+      letter-spacing: 0.04em;
+    }
 
-.lens-card__desc {
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
+    /* Lens grid */
+    .lens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 2em 0;
+    }
 
-/* Colophon */
-.colophon {
-  margin-top: 4em;
-  padding-top: 2em;
-  border-top: 1px solid var(--border);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-style: italic;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
+    .lens-card {
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
 
-/* Footer */
-.footer {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 40px 60px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--border);
-  padding-top: 24px;
-}
+    .lens-card:hover {
+      border-color: var(--border-bright);
+    }
 
-.footer__links {
-  list-style: none;
-  display: flex;
-  gap: 24px;
-}
+    .lens-card__name {
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent-bright);
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
 
-.footer__links a {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  transition: color 0.3s;
-}
+    .lens-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
 
-.footer__links a:hover { color: var(--text-primary); }
+    /* Colophon */
+    .colophon {
+      margin-top: 4em;
+      padding-top: 2em;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
 
-.footer__copy {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 40px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
 
-/* Mobile */
-@media (max-width: 640px) {
-  .article { padding: 100px 20px 80px; }
-  .nav__inner { padding: 0 20px; }
-  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
-  .prose { font-size: 1.02rem; }
-  .prose pre { padding: 16px; }
-  .lens-grid { grid-template-columns: 1fr; }
-  .diagram { padding: 20px 12px; }
-}
+    .footer__links {
+      list-style: none;
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer__links a {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      transition: color 0.3s;
+    }
+
+    .footer__links a:hover {
+      color: var(--text-primary);
+    }
+
+    .footer__copy {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .article {
+        padding: 100px 20px 80px;
+      }
+
+      .nav__inner {
+        padding: 0 20px;
+      }
+
+      .footer {
+        padding: 24px 20px 40px;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .prose {
+        font-size: 1.02rem;
+      }
+
+      .prose pre {
+        padding: 16px;
+      }
+
+      .lens-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .diagram {
+        padding: 20px 12px;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <div class="bg-weave"></div>
@@ -467,80 +528,123 @@ a:hover { color: var(--accent-bright); }
 
     <div class="prose">
 
-<p>Tell Claude &ldquo;you cannot use any form of the verb &lsquo;to be&rsquo;&rdquo; (<a href="https://en.wikipedia.org/wiki/E-Prime" target="_blank" rel="noopener">E-Prime</a>) and the analysis comes back different. Not different like a rephrased sentence. Different like a different person wrote it. Built around actions and relationships instead of labels and categories. It catches things the default output misses. This isn&rsquo;t prompt engineering. You&rsquo;re not telling the model what to say. You&rsquo;re changing how it&rsquo;s able to think.</p>
+      <p>Tell Claude &ldquo;you cannot use any form of the verb &lsquo;to be&rsquo;&rdquo; (<a
+          href="https://en.wikipedia.org/wiki/E-Prime" target="_blank" rel="noopener">E-Prime</a>) and the analysis
+        comes back different. Not different like a rephrased sentence. Different like a different person wrote it. Built
+        around actions and relationships instead of labels and categories. It catches things the default output misses.
+        This isn&rsquo;t prompt engineering. You&rsquo;re not telling the model what to say. You&rsquo;re changing how
+        it&rsquo;s able to think.</p>
 
-<div class="diagram" style="margin: 2.5em 0;">
-  <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg">
-    <!-- Left: Prompt Engineering -->
-    <rect x="20" y="20" width="270" height="110" rx="8" fill="rgba(120,170,255,0.04)" stroke="rgba(120,170,255,0.12)" stroke-width="1"/>
-    <text x="155" y="48" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" letter-spacing="0.1em">PROMPT ENGINEERING</text>
-    <text x="155" y="76" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="12">&ldquo;Be creative&rdquo;</text>
-    <text x="155" y="96" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif" font-size="12">&ldquo;Think step by step&rdquo;</text>
-    <text x="155" y="118" text-anchor="middle" fill="rgba(230,236,245,0.25)" font-family="Inter,sans-serif" font-size="10" font-style="italic">controls what the model says</text>
+      <div class="diagram" style="margin: 2.5em 0;">
+        <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg">
+          <!-- Left: Prompt Engineering -->
+          <rect x="20" y="20" width="270" height="110" rx="8" fill="rgba(120,170,255,0.04)"
+            stroke="rgba(120,170,255,0.12)" stroke-width="1" />
+          <text x="155" y="48" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Space Grotesk,sans-serif"
+            font-size="10" font-weight="600" letter-spacing="0.1em">PROMPT ENGINEERING</text>
+          <text x="155" y="76" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif"
+            font-size="12">&ldquo;Be creative&rdquo;</text>
+          <text x="155" y="96" text-anchor="middle" fill="rgba(230,236,245,0.5)" font-family="Inter,sans-serif"
+            font-size="12">&ldquo;Think step by step&rdquo;</text>
+          <text x="155" y="118" text-anchor="middle" fill="rgba(230,236,245,0.25)" font-family="Inter,sans-serif"
+            font-size="10" font-style="italic">controls what the model says</text>
 
-    <!-- Arrow -->
-    <text x="320" y="82" text-anchor="middle" fill="rgba(230,236,245,0.15)" font-family="Inter,sans-serif" font-size="20">vs.</text>
+          <!-- Arrow -->
+          <text x="320" y="82" text-anchor="middle" fill="rgba(230,236,245,0.15)" font-family="Inter,sans-serif"
+            font-size="20">vs.</text>
 
-    <!-- Right: Cognitive Lens -->
-    <rect x="350" y="20" width="270" height="110" rx="8" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)" stroke-width="1"/>
-    <text x="485" y="48" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" letter-spacing="0.1em">COGNITIVE LENS</text>
-    <text x="485" y="76" text-anchor="middle" fill="rgba(230,236,245,0.65)" font-family="Inter,sans-serif" font-size="12">&ldquo;You cannot use &lsquo;to be&rsquo;&rdquo;</text>
-    <text x="485" y="96" text-anchor="middle" fill="rgba(230,236,245,0.65)" font-family="Inter,sans-serif" font-size="12">&ldquo;Tag every claim with its source&rdquo;</text>
-    <text x="485" y="118" text-anchor="middle" fill="rgba(77,168,255,0.5)" font-family="Inter,sans-serif" font-size="10" font-style="italic">changes how the model thinks</text>
-  </svg>
-</div>
+          <!-- Right: Cognitive Lens -->
+          <rect x="350" y="20" width="270" height="110" rx="8" fill="rgba(77,168,255,0.08)"
+            stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="485" y="48" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="10"
+            font-weight="600" letter-spacing="0.1em">COGNITIVE LENS</text>
+          <text x="485" y="76" text-anchor="middle" fill="rgba(230,236,245,0.65)" font-family="Inter,sans-serif"
+            font-size="12">&ldquo;You cannot use &lsquo;to be&rsquo;&rdquo;</text>
+          <text x="485" y="96" text-anchor="middle" fill="rgba(230,236,245,0.65)" font-family="Inter,sans-serif"
+            font-size="12">&ldquo;Tag every claim with its source&rdquo;</text>
+          <text x="485" y="118" text-anchor="middle" fill="rgba(77,168,255,0.5)" font-family="Inter,sans-serif"
+            font-size="10" font-style="italic">changes how the model thinks</text>
+        </svg>
+      </div>
 
-<p>Here&rsquo;s what I mean by &ldquo;changes how it thinks.&rdquo; When a model can say &ldquo;X <em>is</em> Y,&rdquo; it classifies and moves on. Fast, but shallow. Remove &ldquo;is&rdquo; and it can&rsquo;t classify. It has to describe what X <em>does</em>, how X <em>relates</em> to Y, what <em>happens</em> when they interact. The rule doesn&rsquo;t tell the model what to conclude. It blocks the cheap path and forces the model to route through more expensive, more revealing territory. Different rules block different paths. Each one exposes structure the default response skips over.</p>
+      <p>Here&rsquo;s what I mean by &ldquo;changes how it thinks.&rdquo; When a model can say &ldquo;X <em>is</em>
+        Y,&rdquo; it classifies and moves on. Fast, but shallow. Remove &ldquo;is&rdquo; and it can&rsquo;t classify. It
+        has to describe what X <em>does</em>, how X <em>relates</em> to Y, what <em>happens</em> when they interact. The
+        rule doesn&rsquo;t tell the model what to conclude. It blocks the cheap path and forces the model to route
+        through more expensive, more revealing territory. Different rules block different paths. Each one exposes
+        structure the default response skips over.</p>
 
-<p>E-Prime is one such rule. I found eight more. A rule that requires tagging every claim as &ldquo;observed,&rdquo; &ldquo;inferred,&rdquo; or &ldquo;assumed&rdquo; forces the model to separate what it knows from what it&rsquo;s guessing. A rule that inverts every assumption exposes hidden dependencies. Each rule I call a &ldquo;lens,&rdquo; and each one pushes the model down a different reasoning path.</p>
+      <p>E-Prime is one such rule. I found eight more. A rule that requires tagging every claim as
+        &ldquo;observed,&rdquo; &ldquo;inferred,&rdquo; or &ldquo;assumed&rdquo; forces the model to separate what it
+        knows from what it&rsquo;s guessing. A rule that inverts every assumption exposes hidden dependencies. Each rule
+        I call a &ldquo;lens,&rdquo; and each one pushes the model down a different reasoning path.</p>
 
-<p>Each lens lives in a markdown file. A skill reads the files at runtime and spins up parallel agents, each one reasoning under a different constraint, none of them aware of the others. A synthesizer reads all the outputs and maps where they agree, where they diverge, and what none of them thought to look at.</p>
+      <p>Each lens lives in a markdown file. A skill reads the files at runtime and spins up parallel agents, each one
+        reasoning under a different constraint, none of them aware of the others. A synthesizer reads all the outputs
+        and maps where they agree, where they diverge, and what none of them thought to look at.</p>
 
-<p>Nine lenses, three functional roles, a set of skills that wire them into teams on demand. It runs inside Claude Code every day. Everything here is open source and the whole thing is built from markdown files you can copy in five minutes.</p>
+      <p>Eleven lenses, five functional roles, a set of skills that wire them into teams on demand. It runs inside Claude
+        Code every day. Everything here is open source and the whole thing is built from markdown files you can copy in
+        five minutes.</p>
 
-<a href="https://github.com/rodspeed/claude-cognitive-architecture" class="repo-link" target="_blank" rel="noopener">
-  <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-  github.com/rodspeed/claude-cognitive-architecture
-</a>
+      <a href="https://github.com/rodspeed/claude-cognitive-architecture" class="repo-link" target="_blank"
+        rel="noopener">
+        <svg viewBox="0 0 16 16">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+        github.com/rodspeed/claude-cognitive-architecture
+      </a>
 
-<nav class="toc">
-  <p class="toc__title">In this post</p>
-  <ol class="toc__list">
-    <li><a href="#problem">The problem with one mind</a></li>
-    <li><a href="#lenses">Lenses: constraints that change reasoning</a></li>
-    <li><a href="#roles">Roles: agents that do specific jobs</a></li>
-    <li><a href="#composition">How skills wire it together</a></li>
-    <li><a href="#directory">The directory is the interface</a></li>
-    <li><a href="#practice">What this actually looks like in practice</a></li>
-    <li><a href="#feedback">The feedback loop</a></li>
-    <li><a href="#advisor">An advisor that knows the toolkit</a></li>
-    <li><a href="#build">What you can build today</a></li>
-    <li><a href="#failures">What didn&rsquo;t work</a></li>
-    <li><a href="#why">Why this works</a></li>
-  </ol>
-</nav>
+      <nav class="toc">
+        <p class="toc__title">In this post</p>
+        <ol class="toc__list">
+          <li><a href="#problem">The problem with one mind</a></li>
+          <li><a href="#lenses">Lenses: constraints that change reasoning</a></li>
+          <li><a href="#roles">Roles: agents that do specific jobs</a></li>
+          <li><a href="#composition">How skills wire it together</a></li>
+          <li><a href="#directory">The directory is the interface</a></li>
+          <li><a href="#practice">What this actually looks like in practice</a></li>
+          <li><a href="#feedback">The feedback loop</a></li>
+          <li><a href="#advisor">An advisor that knows the toolkit</a></li>
+          <li><a href="#build">What you can build today</a></li>
+          <li><a href="#failures">What didn&rsquo;t work</a></li>
+          <li><a href="#why">Why this works</a></li>
+        </ol>
+      </nav>
 
-<hr />
+      <hr />
 
-<h2 id="problem">The problem with one mind</h2>
+      <h2 id="problem">The problem with one mind</h2>
 
-<p>When you ask an AI to review your architecture, critique your writing, or debug your code, you get one perspective. It&rsquo;s usually competent. It&rsquo;s also always the <em>same kind</em> of competent. Same reasoning patterns, same default assumptions, same blind spots.</p>
+      <p>When you ask an AI to review your architecture, critique your writing, or debug your code, you get one
+        perspective. It&rsquo;s usually competent. It&rsquo;s also always the <em>same kind</em> of competent. Same
+        reasoning patterns, same default assumptions, same blind spots.</p>
 
-<p>Humans solve this by putting different people in a room. The pessimist catches risks. The first-principles thinker questions assumptions everyone else takes for granted. The person who thinks in analogies connects the problem to something from a completely different domain. Each person&rsquo;s cognitive style reveals things the others miss.</p>
+      <p>Humans solve this by putting different people in a room. The pessimist catches risks. The first-principles
+        thinker questions assumptions everyone else takes for granted. The person who thinks in analogies connects the
+        problem to something from a completely different domain. Each person&rsquo;s cognitive style reveals things the
+        others miss.</p>
 
-<p>You can&rsquo;t put different AIs in a room. But you can put <em>rules</em> on a single AI that force it to reason differently each time.</p>
+      <p>You can&rsquo;t put different AIs in a room. But you can put <em>rules</em> on a single AI that force it to
+        reason differently each time.</p>
 
-<p>A rule that bans all forms of &ldquo;to be&rdquo; (is, are, was, were) doesn&rsquo;t just change vocabulary. It reliably produces output built around actions, relationships, and processes instead of static labels. A rule that requires every claim to be tagged with where it came from (&ldquo;observed,&rdquo; &ldquo;inferred,&rdquo; &ldquo;assumed&rdquo;) produces analysis that separates what you actually know from what you&rsquo;re guessing.</p>
+      <p>A rule that bans all forms of &ldquo;to be&rdquo; (is, are, was, were) doesn&rsquo;t just change vocabulary. It
+        reliably produces output built around actions, relationships, and processes instead of static labels. A rule
+        that requires every claim to be tagged with where it came from (&ldquo;observed,&rdquo; &ldquo;inferred,&rdquo;
+        &ldquo;assumed&rdquo;) produces analysis that separates what you actually know from what you&rsquo;re guessing.
+      </p>
 
-<p>These aren&rsquo;t prompting tricks. They&rsquo;re rules that reshape reasoning. And they combine.</p>
+      <p>These aren&rsquo;t prompting tricks. They&rsquo;re rules that reshape reasoning. And they combine.</p>
 
-<hr />
+      <hr />
 
-<h2 id="lenses">Lenses: constraints that change reasoning</h2>
+      <h2 id="lenses">Lenses: constraints that change reasoning</h2>
 
-<p>A lens is a markdown file with a name, a type declaration, and a body that describes the cognitive constraint. Simplified example:</p>
+      <p>A lens is a markdown file with a name, a type declaration, and a body that describes the cognitive constraint.
+        Simplified example:</p>
 
-<pre><code>---
+      <pre><code>---
 name: counterfactual
 type: lens
 description: Inverts assumptions to find hidden dependencies
@@ -551,127 +655,200 @@ what would break if the opposite were true.
 
 Structure: observation &rarr; inversion &rarr; what breaks.</code></pre>
 
-<p>The file lives in <code>.claude/agents/</code>. When a skill runs, it reads this file and adds the constraint to the beginning of the agent&rsquo;s instructions. The model never sees the word &ldquo;lens.&rdquo; It just receives a rule that shapes how it approaches the task.</p>
+      <p>The file lives in <code>.claude/agents/</code>. When a skill runs, it reads this file and adds the constraint
+        to the beginning of the agent&rsquo;s instructions. The model never sees the word &ldquo;lens.&rdquo; It just
+        receives a rule that shapes how it approaches the task.</p>
 
-<p>I have nine lenses. Each one forces a different mode of reasoning:</p>
+      <p>I have eleven lenses. Each one forces a different mode of reasoning:</p>
 
-<div class="lens-grid">
-  <div class="lens-card">
-    <div class="lens-card__name">Counterfactual</div>
-    <div class="lens-card__desc">Invert every assumption. What breaks if this premise were false?</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">Analogical</div>
-    <div class="lens-card__desc">Map findings to cross-domain parallels before stating them directly.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">Minimal</div>
-    <div class="lens-card__desc">Absolute minimum words. Every word earns its place or gets cut.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">Evidential</div>
-    <div class="lens-card__desc">Tag every claim: [observed], [inferred], [assumed], [uncertain].</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">First Principles</div>
-    <div class="lens-card__desc">Derive from axioms only. No best practices, no conventions.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">Steel-Man</div>
-    <div class="lens-card__desc">Build the strongest defense of the status quo before finding where it fails.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">E-Prime</div>
-    <div class="lens-card__desc">Ban all forms of &ldquo;to be.&rdquo; Forces operational language.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">Process-Only</div>
-    <div class="lens-card__desc">Everything as flow and transformation. Nothing &ldquo;is&rdquo; &mdash; things happen.</div>
-  </div>
-  <div class="lens-card">
-    <div class="lens-card__name">No-Possession</div>
-    <div class="lens-card__desc">Strip &ldquo;to have.&rdquo; Describe through relationships, not ownership.</div>
-  </div>
-</div>
+      <div class="lens-grid">
+        <div class="lens-card">
+          <div class="lens-card__name">Counterfactual</div>
+          <div class="lens-card__desc">Invert every assumption. What breaks if this premise were false?</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Analogical</div>
+          <div class="lens-card__desc">Map findings to cross-domain parallels before stating them directly.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Minimal</div>
+          <div class="lens-card__desc">Absolute minimum words. Every word earns its place or gets cut.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Evidential</div>
+          <div class="lens-card__desc">Tag every claim: [observed], [inferred], [assumed], [uncertain].</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">First Principles</div>
+          <div class="lens-card__desc">Derive from axioms only. No best practices, no conventions.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Steel-Man</div>
+          <div class="lens-card__desc">Build the strongest defense of the status quo before finding where it fails.
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">E-Prime</div>
+          <div class="lens-card__desc">Ban all forms of &ldquo;to be.&rdquo; Forces operational language.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Process-Only</div>
+          <div class="lens-card__desc">Everything as flow and transformation. Nothing &ldquo;is&rdquo; &mdash; things
+            happen.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">No-Possession</div>
+          <div class="lens-card__desc">Strip &ldquo;to have.&rdquo; Describe through relationships, not ownership.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Temporal</div>
+          <div class="lens-card__desc">Trace how things got here and where they&rsquo;re heading. Genealogy over snapshot.</div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-card__name">Regularizer</div>
+          <div class="lens-card__desc">Ban filler words. Auto-applied to unlensed agents. +7.3pp accuracy in testing.</div>
+        </div>
+      </div>
 
-<p>Why these nine? Three (E-Prime, No-Possession, Process-Only) come from linguistics. They restrict <em>which words the model can use</em>, which changes what it can express. The rest restrict <em>how the model approaches a problem</em>: what it looks for, what it questions, what it takes for granted. Together they cover a wide range of thinking styles.</p>
+      <p>Why these eleven? Three (E-Prime, No-Possession, Process-Only) come from linguistics. They restrict <em>which
+          words the model can use</em>, which changes what it can express. Temporal and Regularizer each target a specific
+        failure mode (static analysis and filler-padded hedging). The rest restrict <em>how the model
+          approaches a problem</em>: what it looks for, what it questions, what it takes for granted. Together they
+        cover a wide range of thinking styles.</p>
 
-<p><strong>A lens doesn&rsquo;t tell the model what to conclude. It tells the model how to look.</strong> Two agents with different lenses examining the same code will see different things: different risks, different assumptions, different structural properties.</p>
+      <p><strong>A lens doesn&rsquo;t tell the model what to conclude. It tells the model how to look.</strong> Two
+        agents with different lenses examining the same code will see different things: different risks, different
+        assumptions, different structural properties.</p>
 
-<hr />
+      <hr />
 
-<h2 id="roles">Roles: agents that do specific jobs</h2>
+      <h2 id="roles">Roles: agents that do specific jobs</h2>
 
-<p>Lenses change how an agent thinks. Roles define what an agent <em>does</em>. I have three:</p>
+      <p>Lenses change how an agent thinks. Roles define what an agent <em>does</em>. I have five:</p>
 
-<p><strong>Researcher.</strong> Given a question, it gathers evidence on its own: searching the web, reading files, tracking where each finding came from. Its output is structured (key findings, supporting evidence, gaps it noticed, confidence per claim). It doesn&rsquo;t speculate beyond what it found.</p>
+      <p><strong>Researcher.</strong> Given a question, it gathers evidence on its own: searching the web, reading
+        files, tracking where each finding came from. Its output is structured (key findings, supporting evidence, gaps
+        it noticed, confidence per claim). It doesn&rsquo;t speculate beyond what it found.</p>
 
-<p><strong>Critic.</strong> Reads a document cold. No author context, no conversation history, just the document and instructions to find what&rsquo;s wrong. Produces a structured review: what&rsquo;s sound, what&rsquo;s shaky, what&rsquo;s missing. The cold read is the point. Leak context and you&rsquo;ve defeated the purpose.</p>
+      <p><strong>Critic.</strong> Reads a document cold. No author context, no conversation history, just the document
+        and instructions to find what&rsquo;s wrong. Produces a structured review: what&rsquo;s sound, what&rsquo;s
+        shaky, what&rsquo;s missing. The cold read is the point. Leak context and you&rsquo;ve defeated the purpose.</p>
 
-<p><strong>Synthesizer.</strong> Takes output from multiple agents and produces a combined analysis. It looks for four things: where the agents agree, where they disagree, what none of them mentioned, and what emerges from reading them together that no single output contains.</p>
+      <p><strong>Synthesizer.</strong> Takes output from multiple agents and produces a combined analysis. It looks for
+        four things: where the agents agree, where they disagree, what none of them mentioned, and what emerges from
+        reading them together that no single output contains.</p>
 
-<p>Roles and lenses combine. A researcher with the <em>evidential</em> lens tags every finding with its source. A researcher with the <em>counterfactual</em> lens probes what would change if key assumptions were wrong. Same job, different thinking style, different output.</p>
+      <p><strong>Fact-Checker.</strong> Traces every number in a document back to its source data file. Checks
+        arithmetic, verifies citations say what the paper claims, and flags internal inconsistencies. Built after
+        writing a research paper where manual line-by-line number audits proved necessary but tedious.</p>
 
-<hr />
+      <p><strong>Editor.</strong> Line-level prose improvement without changing argument or structure. Tightens
+        sentences, fixes register drift, ensures logical flow between paragraphs. Distinct from the critic (which
+        finds structural problems) &mdash; the editor handles craft.</p>
 
-<h2 id="composition">How skills wire it together</h2>
+      <p>Roles and lenses combine. A researcher with the <em>evidential</em> lens tags every finding with its source. A
+        researcher with the <em>counterfactual</em> lens probes what would change if key assumptions were wrong. Same
+        job, different thinking style, different output.</p>
 
-<p>No single lens or role does much on its own. The leverage comes from combining them. A skill reads lens files at runtime and feeds each constraint into a separate parallel agent. Three skills show the pattern:</p>
+      <hr />
 
-<!-- Diagram: Parallax flow -->
-<div class="diagram">
-  <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
-    <!-- Question input -->
-    <rect x="230" y="10" width="180" height="40" rx="6" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)" stroke-width="1"/>
-    <text x="320" y="35" text-anchor="middle" fill="#6dc0ff" font-family="Space Grotesk,sans-serif" font-size="13" font-weight="600">Your Question</text>
+      <h2 id="composition">How skills wire it together</h2>
 
-    <!-- Arrows down -->
-    <line x1="240" y1="50" x2="110" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
-    <line x1="320" y1="50" x2="320" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
-    <line x1="400" y1="50" x2="530" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
+      <p>No single lens or role does much on its own. The leverage comes from combining them. A skill reads lens files
+        at runtime and feeds each constraint into a separate parallel agent. Three skills show the pattern:</p>
 
-    <!-- Three lensed agents -->
-    <rect x="30" y="90" width="160" height="56" rx="8" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
-    <text x="110" y="113" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">AGENT 1</text>
-    <text x="110" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif" font-size="10">counterfactual lens</text>
+      <!-- Diagram: Parallax flow -->
+      <div class="diagram">
+        <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Question input -->
+          <rect x="230" y="10" width="180" height="40" rx="6" fill="rgba(77,168,255,0.1)" stroke="rgba(77,168,255,0.3)"
+            stroke-width="1" />
+          <text x="320" y="35" text-anchor="middle" fill="#6dc0ff" font-family="Space Grotesk,sans-serif" font-size="13"
+            font-weight="600">Your Question</text>
 
-    <rect x="240" y="90" width="160" height="56" rx="8" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.3)" stroke-width="1"/>
-    <text x="320" y="113" text-anchor="middle" fill="#e8b04a" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">AGENT 2</text>
-    <text x="320" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif" font-size="10">first-principles lens</text>
+          <!-- Arrows down -->
+          <line x1="240" y1="50" x2="110" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
+          <line x1="320" y1="50" x2="320" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
+          <line x1="400" y1="50" x2="530" y2="90" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
 
-    <rect x="450" y="90" width="160" height="56" rx="8" fill="rgba(232,145,109,0.08)" stroke="rgba(232,145,109,0.3)" stroke-width="1"/>
-    <text x="530" y="113" text-anchor="middle" fill="#e8916d" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">AGENT 3</text>
-    <text x="530" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif" font-size="10">steel-man lens</text>
+          <!-- Three lensed agents -->
+          <rect x="30" y="90" width="160" height="56" rx="8" fill="rgba(167,139,250,0.08)"
+            stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="110" y="113" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif"
+            font-size="11" font-weight="600">AGENT 1</text>
+          <text x="110" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif"
+            font-size="10">counterfactual lens</text>
 
-    <!-- Parallel indicator -->
-    <text x="320" y="172" text-anchor="middle" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif" font-size="9" letter-spacing="0.12em">PARALLEL EXECUTION</text>
+          <rect x="240" y="90" width="160" height="56" rx="8" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.3)"
+            stroke-width="1" />
+          <text x="320" y="113" text-anchor="middle" fill="#e8b04a" font-family="Space Grotesk,sans-serif"
+            font-size="11" font-weight="600">AGENT 2</text>
+          <text x="320" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif"
+            font-size="10">first-principles lens</text>
 
-    <!-- Arrows to synthesizer -->
-    <line x1="110" y1="146" x2="240" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
-    <line x1="320" y1="146" x2="320" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
-    <line x1="530" y1="146" x2="400" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1"/>
+          <rect x="450" y="90" width="160" height="56" rx="8" fill="rgba(232,145,109,0.08)"
+            stroke="rgba(232,145,109,0.3)" stroke-width="1" />
+          <text x="530" y="113" text-anchor="middle" fill="#e8916d" font-family="Space Grotesk,sans-serif"
+            font-size="11" font-weight="600">AGENT 3</text>
+          <text x="530" y="133" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif"
+            font-size="10">steel-man lens</text>
 
-    <!-- Synthesizer -->
-    <rect x="220" y="195" width="200" height="50" rx="8" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)" stroke-width="1"/>
-    <text x="320" y="216" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">SYNTHESIZER</text>
-    <text x="320" y="234" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif" font-size="10">consensus / divergence / blind spots</text>
-  </svg>
-  <span class="diagram__caption">Parallax: three lensed agents in parallel, then synthesis</span>
-</div>
+          <!-- Parallel indicator -->
+          <text x="320" y="172" text-anchor="middle" fill="rgba(230,236,245,0.2)" font-family="Inter,sans-serif"
+            font-size="9" letter-spacing="0.12em">PARALLEL EXECUTION</text>
 
-<p><strong>Parallax</strong> takes a question and runs it through three agents at once, each with a different lens. The synthesizer reads all three outputs and maps where they agree, where they disagree, and what none of them mentioned. It ships with preset combinations: <em>debug</em> (counterfactual + analogical + minimal), <em>architecture</em> (first-principles + process-only + steel-man), <em>decision</em> (counterfactual + first-principles + steel-man). You can also pass any combination you want.</p>
+          <!-- Arrows to synthesizer -->
+          <line x1="110" y1="146" x2="240" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
+          <line x1="320" y1="146" x2="320" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
+          <line x1="530" y1="146" x2="400" y2="195" stroke="rgba(120,170,255,0.2)" stroke-width="1" />
 
-<p><strong>Research</strong> takes a broad question and breaks it into two to five sub-questions depending on how wide the topic is. Each sub-question gets its own researcher agent, running in parallel. The synthesis step maps which answers overlap, which contradict, and where coverage is thin. Works with any lens: <code>/research --lens evidential</code> produces researchers that tag every finding with where it came from.</p>
+          <!-- Synthesizer -->
+          <rect x="220" y="195" width="200" height="50" rx="8" fill="rgba(77,168,255,0.08)"
+            stroke="rgba(77,168,255,0.3)" stroke-width="1" />
+          <text x="320" y="216" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif"
+            font-size="11" font-weight="600">SYNTHESIZER</text>
+          <text x="320" y="234" text-anchor="middle" fill="rgba(230,236,245,0.4)" font-family="Inter,sans-serif"
+            font-size="10">consensus / divergence / blind spots</text>
+        </svg>
+        <span class="diagram__caption">Parallax: three lensed agents in parallel, then synthesis</span>
+      </div>
 
-<p><strong>Scrutinize</strong> runs a structured debate. A fresh-context critic reads a document cold and writes a structured critique. An advocate responds, conceding valid points, defending where the critic is wrong. Then a <em>new</em> fresh critic rebuts. Two rounds, then synthesis: agreed changes versus contested points. What makes this work is the cold read. The critic gets zero author context, zero conversation history, zero &ldquo;here&rsquo;s what we were thinking.&rdquo; The entire value is in the fresh eyes.</p>
+      <p><strong>Parallax</strong> takes a question and runs it through three agents at once, each with a different
+        lens. The synthesizer reads all three outputs and maps where they agree, where they disagree, and what none of
+        them mentioned. It ships with preset combinations: <em>debug</em> (counterfactual + analogical + minimal),
+        <em>architecture</em> (first-principles + process-only + steel-man), <em>decision</em> (counterfactual +
+        first-principles + steel-man). You can also pass any combination you want.</p>
 
-<hr />
+      <p><strong>Research</strong> takes a broad question and breaks it into two to five sub-questions depending on how
+        wide the topic is. Each sub-question gets its own researcher agent, running in parallel. The synthesis step maps
+        which answers overlap, which contradict, and where coverage is thin. Works with any lens:
+        <code>/research --lens evidential</code> produces researchers that tag every finding with where it came from.
+      </p>
 
-<h2 id="directory">The directory is the interface</h2>
+      <p><strong>Scrutinize</strong> runs a structured debate. A fresh-context critic reads a document cold and writes a
+        structured critique. An advocate responds, conceding valid points, defending where the critic is wrong. Then a
+        <em>new</em> fresh critic rebuts. Two rounds, then synthesis: agreed changes versus contested points. What makes
+        this work is the cold read. The critic gets zero author context, zero conversation history, zero
+        &ldquo;here&rsquo;s what we were thinking.&rdquo; The entire value is in the fresh eyes.</p>
 
-<p>Nine lenses, three roles, and the skills that compose them all live in two directories:</p>
+      <p>These three compose into a paper-writing pipeline. <strong>Draft</strong> takes a thesis, evidence files, and
+        an audience (academic, blog, general) and produces structured prose. It composes with lenses:
+        <code>/draft --lens evidential</code> produces prose where every claim is tagged with its epistemic status.
+        After drafting, <strong>Scrutinize</strong> reviews. Then <strong>Revise</strong> takes the scrutiny output and
+        applies changes systematically, producing diffs for approval. The full chain is: research &rarr; draft &rarr;
+        scrutinize &rarr; revise. Each step has a dedicated skill.</p>
 
-<pre><code>.claude/
+      <p><strong>Watch</strong> sits outside the production pipeline. It scans ArXiv and Semantic Scholar for recent
+        work in your research areas and surfaces what&rsquo;s relevant. Not for answering questions &mdash; for
+        situational awareness. Knowing when someone publishes in your space before you hear about it secondhand.</p>
+
+      <hr />
+
+      <h2 id="directory">The directory is the interface</h2>
+
+      <p>Eleven lenses, five roles, and the skills that compose them all live in two directories:</p>
+
+      <pre><code>.claude/
   agents/
     counterfactual.md      # lens
     analogical.md          # lens
@@ -682,149 +859,245 @@ Structure: observation &rarr; inversion &rarr; what breaks.</code></pre>
     eprime.md              # lens
     process-only.md        # lens
     no-possession.md       # lens
+    temporal.md            # lens
+    regularizer.md         # lens (auto-applied)
     critic.md              # role
     researcher.md          # role
     synthesizer.md         # role
+    fact-checker.md        # role
+    editor.md              # role
   skills/
     parallax/SKILL.md      # 3-lens ensemble
     research/SKILL.md      # parallel deep research
     scrutinize/SKILL.md    # adversarial review
+    draft/SKILL.md         # structured prose production
+    revise/SKILL.md        # apply editorial feedback
+    watch/SKILL.md         # literature monitor
     orient/SKILL.md        # toolkit advisor</code></pre>
 
-<p>Adding a new lens means adding a markdown file. No skill edits, no configuration changes, no deployment. Skills discover agents at runtime by reading the directory. The filesystem <em>is</em> the registry.</p>
+      <p>Adding a new lens means adding a markdown file. No skill edits, no configuration changes, no deployment. Skills
+        discover agents at runtime by reading the directory. The filesystem <em>is</em> the registry.</p>
 
-<p>Iteration speed follows directly. I built the initial nine lenses in an afternoon. When I realized I needed a lens that forces analogical reasoning, I wrote <code>analogical.md</code> and it was immediately available to every skill that reads from <code>agents/</code>. Zero wiring.</p>
+      <p>Iteration speed follows directly. I built the initial nine lenses in an afternoon. When I realized I needed a
+        lens that forces analogical reasoning, I wrote <code>analogical.md</code> and it was immediately available to
+        every skill that reads from <code>agents/</code>. Zero wiring.</p>
 
-<hr />
+      <hr />
 
-<h2 id="practice">What this actually looks like in practice</h2>
+      <h2 id="practice">What this actually looks like in practice</h2>
 
-<p>Say I&rsquo;m reviewing an architecture decision: knowledge graph or relational database for a personal wiki.</p>
+      <p>Say I&rsquo;m reviewing an architecture decision: knowledge graph or relational database for a personal wiki.
+      </p>
 
-<p>Running <code>/parallax --profile architecture "Knowledge graph vs relational DB for personal wiki with 200+ interconnected notes"</code> spawns three agents:</p>
+      <p>Running
+        <code>/parallax --profile architecture "Knowledge graph vs relational DB for personal wiki with 200+ interconnected notes"</code>
+        spawns three agents:</p>
 
-<ul>
-<li>The <strong>first-principles agent</strong> starts from the actual use cases and reasons upward. It might conclude that graph queries only matter for a handful of operations and the complexity isn&rsquo;t worth it.</li>
-<li>The <strong>process-only agent</strong> describes the system as flows: notes entering, links forming, queries running. It catches bottlenecks invisible in static descriptions, like the fact that <em>writing</em> a note touches the system very differently than <em>reading</em> one.</li>
-<li>The <strong>steel-man agent</strong> builds the strongest possible case for whichever option seems weaker, forcing a fair hearing before dismissal.</li>
-</ul>
+      <ul>
+        <li>The <strong>first-principles agent</strong> starts from the actual use cases and reasons upward. It might
+          conclude that graph queries only matter for a handful of operations and the complexity isn&rsquo;t worth it.
+        </li>
+        <li>The <strong>process-only agent</strong> describes the system as flows: notes entering, links forming,
+          queries running. It catches bottlenecks invisible in static descriptions, like the fact that <em>writing</em>
+          a note touches the system very differently than <em>reading</em> one.</li>
+        <li>The <strong>steel-man agent</strong> builds the strongest possible case for whichever option seems weaker,
+          forcing a fair hearing before dismissal.</li>
+      </ul>
 
-<p>The synthesizer then reads all three analyses (it sees which lens produced which) and maps what they agree on, where they diverge, and what none of them thought to examine.</p>
+      <p>The synthesizer then reads all three analyses (it sees which lens produced which) and maps what they agree on,
+        where they diverge, and what none of them thought to examine.</p>
 
-<p>One run. Three structurally different analyses. Thirty seconds. The alternative is sitting with a question for hours and hoping your own cognitive habits don&rsquo;t create blind spots. They always do.</p>
+      <p>One run. Three structurally different analyses. Thirty seconds. The alternative is sitting with a question for
+        hours and hoping your own cognitive habits don&rsquo;t create blind spots. They always do.</p>
 
-<p>A note on cost: running Parallax means four agent calls (three lensed agents plus the synthesizer). Research means N+1, where N is the number of facets. Scrutinize means multiple rounds. Each parallel agent uses its own context window. For quick factual questions or straightforward code generation, just ask Claude directly. The ensemble overhead buys you nothing there. This architecture earns its cost on consequential questions where missing a blind spot is more expensive than spending extra tokens.</p>
+      <p>A note on cost: running Parallax means four agent calls (three lensed agents plus the synthesizer). Research
+        means N+1, where N is the number of facets. Scrutinize means multiple rounds. Each parallel agent uses its own
+        context window. For quick factual questions or straightforward code generation, just ask Claude directly. The
+        ensemble overhead buys you nothing there. This architecture earns its cost on consequential questions where
+        missing a blind spot is more expensive than spending extra tokens.</p>
 
-<hr />
+      <hr />
 
-<h2 id="feedback">The feedback loop</h2>
+      <h2 id="feedback">The feedback loop</h2>
 
-<p>The cognitive architecture doesn&rsquo;t run in isolation. It feeds into a learning system.</p>
+      <p>The cognitive architecture doesn&rsquo;t run in isolation. It feeds into a learning system.</p>
 
-<!-- Diagram: Feedback loop -->
-<div class="diagram">
-  <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
-    <!-- Nodes -->
-    <rect x="10" y="65" width="100" height="50" rx="6" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)" stroke-width="1"/>
-    <text x="60" y="94" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">WORK</text>
+      <!-- Diagram: Feedback loop -->
+      <div class="diagram">
+        <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+          <!-- Nodes -->
+          <rect x="10" y="65" width="100" height="50" rx="6" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)"
+            stroke-width="1" />
+          <text x="60" y="94" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11"
+            font-weight="600">WORK</text>
 
-    <rect x="150" y="65" width="100" height="50" rx="6" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.3)" stroke-width="1"/>
-    <text x="200" y="88" text-anchor="middle" fill="#e8b04a" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">HARVEST</text>
-    <text x="200" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="9">extract insights</text>
+          <rect x="150" y="65" width="100" height="50" rx="6" fill="rgba(232,176,74,0.08)" stroke="rgba(232,176,74,0.3)"
+            stroke-width="1" />
+          <text x="200" y="88" text-anchor="middle" fill="#e8b04a" font-family="Space Grotesk,sans-serif" font-size="11"
+            font-weight="600">HARVEST</text>
+          <text x="200" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif"
+            font-size="9">extract insights</text>
 
-    <rect x="290" y="65" width="100" height="50" rx="6" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
-    <text x="340" y="88" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">OBSERVE</text>
-    <text x="340" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="9">log behaviors</text>
+          <rect x="290" y="65" width="100" height="50" rx="6" fill="rgba(167,139,250,0.08)"
+            stroke="rgba(167,139,250,0.3)" stroke-width="1" />
+          <text x="340" y="88" text-anchor="middle" fill="#a78bfa" font-family="Space Grotesk,sans-serif" font-size="11"
+            font-weight="600">OBSERVE</text>
+          <text x="340" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif"
+            font-size="9">log behaviors</text>
 
-    <rect x="430" y="65" width="100" height="50" rx="6" fill="rgba(232,145,109,0.08)" stroke="rgba(232,145,109,0.3)" stroke-width="1"/>
-    <text x="480" y="88" text-anchor="middle" fill="#e8916d" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">REASON</text>
-    <text x="480" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="9">find connections</text>
+          <rect x="430" y="65" width="100" height="50" rx="6" fill="rgba(232,145,109,0.08)"
+            stroke="rgba(232,145,109,0.3)" stroke-width="1" />
+          <text x="480" y="88" text-anchor="middle" fill="#e8916d" font-family="Space Grotesk,sans-serif" font-size="11"
+            font-weight="600">REASON</text>
+          <text x="480" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif"
+            font-size="9">find connections</text>
 
-    <rect x="540" y="65" width="90" height="50" rx="6" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)" stroke-width="1"/>
-    <text x="585" y="88" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600">DISCOVER</text>
-    <text x="585" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif" font-size="9">new questions</text>
+          <rect x="540" y="65" width="90" height="50" rx="6" fill="rgba(77,168,255,0.08)" stroke="rgba(77,168,255,0.3)"
+            stroke-width="1" />
+          <text x="585" y="88" text-anchor="middle" fill="#4da8ff" font-family="Space Grotesk,sans-serif" font-size="11"
+            font-weight="600">DISCOVER</text>
+          <text x="585" y="104" text-anchor="middle" fill="rgba(230,236,245,0.3)" font-family="Inter,sans-serif"
+            font-size="9">new questions</text>
 
-    <!-- Forward arrows -->
-    <line x1="110" y1="90" x2="148" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1" marker-end="url(#arrowhead)"/>
-    <line x1="250" y1="90" x2="288" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1" marker-end="url(#arrowhead)"/>
-    <line x1="390" y1="90" x2="428" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1" marker-end="url(#arrowhead)"/>
-    <line x1="530" y1="90" x2="538" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1" marker-end="url(#arrowhead)"/>
+          <!-- Forward arrows -->
+          <line x1="110" y1="90" x2="148" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1"
+            marker-end="url(#arrowhead)" />
+          <line x1="250" y1="90" x2="288" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1"
+            marker-end="url(#arrowhead)" />
+          <line x1="390" y1="90" x2="428" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1"
+            marker-end="url(#arrowhead)" />
+          <line x1="530" y1="90" x2="538" y2="90" stroke="rgba(120,170,255,0.3)" stroke-width="1"
+            marker-end="url(#arrowhead)" />
 
-    <!-- Loop-back arrow -->
-    <path d="M585 115 L585 150 Q585 160 575 160 L70 160 Q60 160 60 150 L60 117" fill="none" stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3"/>
-    <text x="320" y="155" text-anchor="middle" fill="rgba(230,236,245,0.15)" font-family="Inter,sans-serif" font-size="9" letter-spacing="0.1em">FEEDS BACK</text>
+          <!-- Loop-back arrow -->
+          <path d="M585 115 L585 150 Q585 160 575 160 L70 160 Q60 160 60 150 L60 117" fill="none"
+            stroke="rgba(120,170,255,0.15)" stroke-width="1" stroke-dasharray="4 3" />
+          <text x="320" y="155" text-anchor="middle" fill="rgba(230,236,245,0.15)" font-family="Inter,sans-serif"
+            font-size="9" letter-spacing="0.1em">FEEDS BACK</text>
 
-    <!-- Auto labels -->
-    <text x="155" y="55" text-anchor="middle" fill="rgba(232,176,74,0.4)" font-family="Inter,sans-serif" font-size="8" letter-spacing="0.1em">AUTO</text>
-    <text x="295" y="55" text-anchor="middle" fill="rgba(167,139,250,0.4)" font-family="Inter,sans-serif" font-size="8" letter-spacing="0.1em">AUTO</text>
-    <text x="435" y="55" text-anchor="middle" fill="rgba(232,145,109,0.4)" font-family="Inter,sans-serif" font-size="8" letter-spacing="0.1em">PROMPTED</text>
+          <!-- Auto labels -->
+          <text x="155" y="55" text-anchor="middle" fill="rgba(232,176,74,0.4)" font-family="Inter,sans-serif"
+            font-size="8" letter-spacing="0.1em">AUTO</text>
+          <text x="295" y="55" text-anchor="middle" fill="rgba(167,139,250,0.4)" font-family="Inter,sans-serif"
+            font-size="8" letter-spacing="0.1em">AUTO</text>
+          <text x="435" y="55" text-anchor="middle" fill="rgba(232,145,109,0.4)" font-family="Inter,sans-serif"
+            font-size="8" letter-spacing="0.1em">PROMPTED</text>
 
-    <defs>
-      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="rgba(120,170,255,0.3)"/>
-      </marker>
-    </defs>
-  </svg>
-  <span class="diagram__caption">The learning loop: work produces knowledge, knowledge feeds the next session</span>
-</div>
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="rgba(120,170,255,0.3)" />
+            </marker>
+          </defs>
+        </svg>
+        <span class="diagram__caption">The learning loop: work produces knowledge, knowledge feeds the next
+          session</span>
+      </div>
 
-<p>At the end of every meaningful conversation, a harvest skill runs automatically. It scans the exchange and pulls out insights as structured notes, each with a title, tags, and links to related notes in the knowledge graph. An observation step runs silently alongside it, logging what I did: which judgment calls I made, where I pushed back, what worked.</p>
+      <p>At the end of every meaningful conversation, a harvest skill runs automatically. It scans the exchange and
+        pulls out insights as structured notes, each with a title, tags, and links to related notes in the knowledge
+        graph. An observation step runs silently alongside it, logging what I did: which judgment calls I made, where I
+        pushed back, what worked.</p>
 
-<p>Periodically, a reasoning engine reviews the full graph and finds connections nobody explicitly drew, gaps where knowledge is thin, and clusters where several notes circle the same unresolved question.</p>
+      <p>Periodically, a reasoning engine reviews the full graph and finds connections nobody explicitly drew, gaps
+        where knowledge is thin, and clusters where several notes circle the same unresolved question.</p>
 
-<p>The loop is: <strong>work &rarr; harvest &rarr; observe &rarr; reason &rarr; discover &rarr; work.</strong> Each conversation feeds the next one. Richer analysis produces richer notes, which produce richer context for the next run.</p>
+      <p>The loop is: <strong>work &rarr; harvest &rarr; observe &rarr; reason &rarr; discover &rarr; work.</strong>
+        Each conversation feeds the next one. Richer analysis produces richer notes, which produce richer context for
+        the next run.</p>
 
-<p>While building the agents directory, the harvest captured a note about the design decision to separate lenses (how an agent thinks) from roles (what an agent does). Two sessions later, the reasoning engine flagged a connection between that note and an older note about linguistic constraints in my research. That connection (linguistic constraints as a special case of cognitive lenses) became the organizing principle for a research paper I&rsquo;m now writing. No single session produced that insight. It emerged from the graph.</p>
+      <p>While building the agents directory, the harvest captured a note about the design decision to separate lenses
+        (how an agent thinks) from roles (what an agent does). Two sessions later, the reasoning engine flagged a
+        connection between that note and an older note about linguistic constraints in my research. That connection
+        (linguistic constraints as a special case of cognitive lenses) became the organizing principle for a research
+        paper I&rsquo;m now writing. No single session produced that insight. It emerged from the graph.</p>
 
-<hr />
+      <hr />
 
-<h2 id="advisor">An advisor that knows the toolkit</h2>
+      <h2 id="advisor">An advisor that knows the toolkit</h2>
 
-<p>With 22 skills, 12 agents, and multiple composition patterns, the question &ldquo;which tool should I use?&rdquo; becomes non-trivial. So I built an advisor.</p>
+      <p>With 27 skills, 16 agents, and multiple composition patterns, the question &ldquo;which tool should I
+        use?&rdquo; becomes non-trivial. So I built an advisor.</p>
 
-<p>The <code>/orient</code> skill scans the full toolkit by reading the filesystem, discovering every skill, lens, and role. You describe your problem. It classifies the problem (broad vs. deep, analysis vs. production, high-stakes vs. exploratory) and recommends which tools to use, in what order, with which lens combinations, and why. It also names what to skip and flags gaps the current toolkit doesn&rsquo;t cover.</p>
+      <p>The <code>/orient</code> skill scans the full toolkit by reading the filesystem, discovering every skill, lens,
+        and role. You describe your problem. It classifies the problem (broad vs. deep, analysis vs. production,
+        high-stakes vs. exploratory) and recommends which tools to use, in what order, with which lens combinations, and
+        why. It also names what to skip and flags gaps the current toolkit doesn&rsquo;t cover.</p>
 
-<p>It doesn&rsquo;t execute anything. It just recommends. Over time, it teaches you your own toolkit so you develop instincts for which tool fits which problem without needing the advisor.</p>
+      <p>It doesn&rsquo;t execute anything. It just recommends. Over time, it teaches you your own toolkit so you
+        develop instincts for which tool fits which problem without needing the advisor.</p>
 
-<hr />
+      <hr />
 
-<h2 id="build">What you can build today</h2>
+      <h2 id="build">What you can build today</h2>
 
-<p>You don&rsquo;t need all of this. The pattern works at any scale.</p>
+      <p>You don&rsquo;t need all of this. The pattern works at any scale.</p>
 
-<p><strong>Step 1: Create one lens.</strong> Pick <em>counterfactual</em>. It&rsquo;s the highest-leverage single lens. Create <code>.claude/agents/counterfactual.md</code> with a name, type, and one paragraph describing the constraint. That&rsquo;s a complete lens.</p>
+      <p><strong>Step 1: Create one lens.</strong> Pick <em>counterfactual</em>. It&rsquo;s the highest-leverage single
+        lens. Create <code>.claude/agents/counterfactual.md</code> with a name, type, and one paragraph describing the
+        constraint. That&rsquo;s a complete lens.</p>
 
-<p><strong>Step 2: Use it manually.</strong> Before you invest in a skill, just tell Claude: &ldquo;Read the constraint in <code>.claude/agents/counterfactual.md</code> and apply it to this question: [your question].&rdquo; See if the constrained analysis reveals something the default response missed. If it does, the pattern earns its place.</p>
+      <p><strong>Step 2: Use it manually.</strong> Before you invest in a skill, just tell Claude: &ldquo;Read the
+        constraint in <code>.claude/agents/counterfactual.md</code> and apply it to this question: [your
+        question].&rdquo; See if the constrained analysis reveals something the default response missed. If it does, the
+        pattern earns its place.</p>
 
-<p><strong>Step 3: Add a second lens.</strong> Pick one that contrasts. <em>Steel-man</em> is a good complement to <em>counterfactual</em>. Now you can run two agents with different constraints on the same question and compare what each one catches.</p>
+      <p><strong>Step 3: Add a second lens.</strong> Pick one that contrasts. <em>Steel-man</em> is a good complement to
+        <em>counterfactual</em>. Now you can run two agents with different constraints on the same question and compare
+        what each one catches.</p>
 
-<p><strong>Step 4: Build a skill.</strong> When you find a lens combination you keep reaching for, wrap it in a skill (<code>.claude/skills/yourskill/SKILL.md</code>) that reads the agent files and spawns parallel agents automatically. This is where it goes from useful to frictionless.</p>
+      <p><strong>Step 4: Build a skill.</strong> When you find a lens combination you keep reaching for, wrap it in a
+        skill (<code>.claude/skills/yourskill/SKILL.md</code>) that reads the agent files and spawns parallel agents
+        automatically. This is where it goes from useful to frictionless.</p>
 
-<p>Each step is independently useful. You don&rsquo;t need the full architecture to get value from a single lens. The architecture emerged from noticing which lenses I reached for repeatedly and automating those patterns.</p>
+      <p>Each step is independently useful. You don&rsquo;t need the full architecture to get value from a single lens.
+        The architecture emerged from noticing which lenses I reached for repeatedly and automating those patterns.</p>
 
-<hr />
+      <hr />
 
-<h2 id="failures">What didn&rsquo;t work</h2>
+      <h2 id="failures">What didn&rsquo;t work</h2>
 
-<p>Not every combination produces useful output. The <em>no-possession</em> lens (strips &ldquo;to have,&rdquo; forces relational language) paired with <em>process-only</em> (expresses everything as flow and transformation) produces dense, nearly unreadable prose. Takes longer to decode than just reading a normal analysis. Two heavy linguistic constraints at once don&rsquo;t add up. They compound into noise. The model spends so much effort satisfying both rules that the actual analysis gets thin.</p>
+      <p>Not every combination produces useful output. The <em>no-possession</em> lens (strips &ldquo;to have,&rdquo;
+        forces relational language) paired with <em>process-only</em> (expresses everything as flow and transformation)
+        produces dense, nearly unreadable prose. Takes longer to decode than just reading a normal analysis. Two heavy
+        linguistic constraints at once don&rsquo;t add up. They compound into noise. The model spends so much effort
+        satisfying both rules that the actual analysis gets thin.</p>
 
-<p>The whole ensemble is also slower and worse than a direct query for certain problems. Simple factual questions, straightforward debugging with an obvious stack trace, anything where the answer is one thing and you just need to find it. Three parallel agents become overhead, not insight. The system adds value when a question has hidden structure that benefits from multiple angles. No hidden structure means you&rsquo;re paying three times the tokens for the same answer said three ways.</p>
+      <p>The whole ensemble is also slower and worse than a direct query for certain problems. Simple factual questions,
+        straightforward debugging with an obvious stack trace, anything where the answer is one thing and you just need
+        to find it. Three parallel agents become overhead, not insight. The system adds value when a question has hidden
+        structure that benefits from multiple angles. No hidden structure means you&rsquo;re paying three times the
+        tokens for the same answer said three ways.</p>
 
-<p>I also tried a 5-lens ensemble early on. Synthesis quality collapsed. The synthesizer can hold three threads and find meaningful divergences. At five, it starts summarizing instead of synthesizing. You get a list of what each lens said, not an analysis of where they disagree and why. Three is the ceiling that works reliably.</p>
+      <p>I also tried a 5-lens ensemble early on. Synthesis quality collapsed. The synthesizer can hold three threads
+        and find meaningful divergences. At five, it starts summarizing instead of synthesizing. You get a list of what
+        each lens said, not an analysis of where they disagree and why. Three is the ceiling that works reliably.</p>
 
-<hr />
+      <hr />
 
-<h2 id="why">Why this works</h2>
+      <h2 id="why">Why this works</h2>
 
-<p>The deeper question: <em>can you change how an AI thinks, or only what it says?</em></p>
+      <p>The deeper question: <em>can you change how an AI thinks, or only what it says?</em></p>
 
-<p>If you tell a model &ldquo;be creative,&rdquo; not much changes. It&rsquo;s performing a label, not following a process. But tell a model &ldquo;you cannot use any form of the verb &lsquo;to be&rsquo; in your response&rdquo; and something different happens. A hard rule, not an aspiration. The output reliably comes back built around verbs, relationships, and processes because the rule removes the easy path of labeling things as fixed categories. The model has to find another way.</p>
+      <p>If you tell a model &ldquo;be creative,&rdquo; not much changes. It&rsquo;s performing a label, not following a
+        process. But tell a model &ldquo;you cannot use any form of the verb &lsquo;to be&rsquo; in your response&rdquo;
+        and something different happens. A hard rule, not an aspiration. The output reliably comes back built around
+        verbs, relationships, and processes because the rule removes the easy path of labeling things as fixed
+        categories. The model has to find another way.</p>
 
-<p>I can see <em>that</em> this happens. I can&rsquo;t tell you exactly <em>why</em>. Maybe the rule changes how the model reasons internally. Maybe it just forces different word choices that happen to surface different information. What I can say is that different rules produce noticeably different analysis. Analysis that catches things the default model misses, and that catches <em>different</em> things depending on the rule. That&rsquo;s enough to be useful. The diversity in the outputs is real even if the mechanism stays open.</p>
+      <p>I can see <em>that</em> this happens. I can&rsquo;t tell you exactly <em>why</em>. Maybe the rule changes how
+        the model reasons internally. Maybe it just forces different word choices that happen to surface different
+        information. What I can say is that different rules produce noticeably different analysis. Analysis that catches
+        things the default model misses, and that catches <em>different</em> things depending on the rule. That&rsquo;s
+        enough to be useful. The diversity in the outputs is real even if the mechanism stays open.</p>
 
-<p>The system that puts it all together (lenses as files, roles as files, skills that combine them at runtime, a directory as the registry) is simple enough that anyone using Claude Code can build their own version in an afternoon. Start with one lens. See what it reveals. Add another. Let it grow from what you actually use.</p>
+      <p>The system that puts it all together (lenses as files, roles as files, skills that combine them at runtime, a
+        directory as the registry) is simple enough that anyone using Claude Code can build their own version in an
+        afternoon. Start with one lens. See what it reveals. Add another. Let it grow from what you actually use.</p>
 
-      <p class="colophon">This is the third post about Claude Code infrastructure. The first covered <a href="claude-code-beyond-coding.html">skills, hooks, and automation patterns</a>. The second covered <a href="epistemic-memory.html">epistemic memory</a>. The cognitive architecture described here sits on top of both.</p>
+      <p class="colophon">This is the third post about Claude Code infrastructure. The first covered <a
+          href="claude-code-beyond-coding.html">skills, hooks, and automation patterns</a>. The second covered <a
+          href="epistemic-memory.html">epistemic memory</a>. The cognitive architecture described here sits on top of
+        both.</p>
 
     </div>
   </article>
@@ -839,4 +1112,5 @@ Structure: observation &rarr; inversion &rarr; what breaks.</code></pre>
   </footer>
 
 </body>
+
 </html>
