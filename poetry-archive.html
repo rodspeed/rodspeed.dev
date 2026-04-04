@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selected Poems &mdash; RodSpeed</title>
+  <meta name="description" content="21 selected poems by Rodney Jehu, spanning 2010 to 2020. From Accra to New York, from haiku to epic." />
+  <meta property="og:title" content="Selected Poems &mdash; RodSpeed" />
+  <meta property="og:description" content="21 selected poems by Rodney Jehu." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rodspeed.ai/poetry-archive.html" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --warm: #e8b04a;
+  --warm-bright: #f0c462;
+  --warm-dim: rgba(232, 176, 74, 0.1);
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-poem: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--warm-dim);
+  color: var(--text-primary);
+}
+
+a { color: inherit; text-decoration: none; }
+
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav__links a {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__links a:hover { color: var(--text-primary); }
+
+/* Page */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 80px;
+}
+
+.page__label {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--warm);
+  margin-bottom: 16px;
+}
+
+.page__title {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.page__subtitle {
+  font-family: var(--font-poem);
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 56px;
+}
+
+/* Table of Contents */
+.toc {
+  margin-bottom: 64px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(232, 176, 74, 0.25);
+}
+
+.toc a {
+  display: block;
+  padding: 5px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.toc a:hover { color: var(--warm-bright); }
+
+.toc .num {
+  color: var(--text-muted);
+  display: inline-block;
+  width: 28px;
+  text-align: right;
+  margin-right: 10px;
+  font-size: 0.82rem;
+}
+
+.toc .yr {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-left: 4px;
+}
+
+/* Poems */
+.poem {
+  margin-bottom: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.poem:last-child { border-bottom: none; }
+
+.poem-title {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.poem-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 24px;
+}
+
+.poem-text {
+  font-family: var(--font-poem);
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  letter-spacing: 0.01em;
+  max-width: 600px;
+  padding-left: 24px;
+  border-left: 2px solid rgba(232, 176, 74, 0.25);
+}
+
+.poem-text .dedication {
+  display: block;
+  margin-top: 28px;
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.back-top {
+  display: inline-block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 16px;
+  transition: color 0.2s;
+}
+
+.back-top:hover { color: var(--warm); }
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .page { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .poem-title { font-size: 1.2rem; }
+  .poem-text { font-size: 0.95rem; padding-left: 16px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="./" class="nav__name">RODSPEED</a>
+      <ul class="nav__links">
+        <li><a href="./#works">Work</a></li>
+        <li><a href="blog/">Writing</a></li>
+        <li><a href="./#about">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="page">
+    <p class="page__label">Selected Poems</p>
+    <h1 class="page__title" id="top">Prolix</h1>
+    <p class="page__subtitle">21 poems, 2010&ndash;2020</p>
+
+    <div class="toc">
+      <a href="#poem-1"><span class="num">1.</span> Rain Dancer <span class="yr">2020</span></a>
+      <a href="#poem-2"><span class="num">2.</span> Drapetes <span class="yr">2017</span></a>
+      <a href="#poem-3"><span class="num">3.</span> Edges <span class="yr">2015</span></a>
+      <a href="#poem-4"><span class="num">4.</span> Accra <span class="yr">2011</span></a>
+      <a href="#poem-5"><span class="num">5.</span> Caked Gum <span class="yr">2012</span></a>
+      <a href="#poem-6"><span class="num">6.</span> marriage <span class="yr">2017</span></a>
+      <a href="#poem-7"><span class="num">7.</span> Mosaic <span class="yr">2016</span></a>
+      <a href="#poem-8"><span class="num">8.</span> Against Knowledge <span class="yr">2020</span></a>
+      <a href="#poem-9"><span class="num">9.</span> The Flat Earth <span class="yr">2020</span></a>
+      <a href="#poem-10"><span class="num">10.</span> Arboretum <span class="yr">2014</span></a>
+      <a href="#poem-11"><span class="num">11.</span> After Chopping Wood <span class="yr">2017</span></a>
+      <a href="#poem-12"><span class="num">12.</span> ~arty cocoon~ <span class="yr">2019</span></a>
+      <a href="#poem-13"><span class="num">13.</span> Feature Keep Creature <span class="yr">2011</span></a>
+      <a href="#poem-14"><span class="num">14.</span> Drop <span class="yr">2020</span></a>
+      <a href="#poem-15"><span class="num">15.</span> Diner Daze <span class="yr">2014</span></a>
+      <a href="#poem-16"><span class="num">16.</span> Awk Awk <span class="yr">2013</span></a>
+      <a href="#poem-17"><span class="num">17.</span> Black Moon <span class="yr">2016</span></a>
+      <a href="#poem-18"><span class="num">18.</span> .singularity <span class="yr">2016</span></a>
+      <a href="#poem-19"><span class="num">19.</span> To Smoothen <span class="yr">2016</span></a>
+      <a href="#poem-20"><span class="num">20.</span> Why Is It So Hard? <span class="yr">2020</span></a>
+      <a href="#poem-21"><span class="num">21.</span> To Define Means to Bring to an End <span class="yr">2019</span></a>
+    </div>
+
+    <!-- 1. Rain Dancer -->
+    <div class="poem" id="poem-1">
+      <h2 class="poem-title">Rain Dancer</h2>
+      <div class="poem-date">July 2020</div>
+      <div class="poem-text">she squinted at us in the
+gathering dust and trapped
+a few hard-won tears in her crow&rsquo;s feet
+her white hair flailing wildly
+
+her ululations escaped as she twirled
+and we knew in a flash
+that the dancer never really left &mdash;
+our village was not yet ridiculous
+enough for a dry joke
+
+her toes rapidly pitter-pattered
+pocking the hard ground that had
+become cracked like old parchment
+bearing a fading contract
+
+she called us wordlessly into the growing fray
+and we began to clap faster as she slapped
+her chest and grunted sharp staccato
+ugh-ugh-ughs
+that whistled though her last teeth
+
+she coughed and spat and then
+plucked a wind string that led back
+to her first dance
+
+her knees knocked together
+and then she flinched with a
+
+HA!
+
+and then the robin&rsquo;s egg broke
+and the sky burst over us
+
+she took her last bow in the crashing applause
+plunged backwards
+through the falling curtains
+and exhaled fragrant petrichor</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 2. Drapetes -->
+    <div class="poem" id="poem-2">
+      <h2 class="poem-title">Drapetes</h2>
+      <div class="poem-date">June 2017</div>
+      <div class="poem-text">Round orbs of fire glowed against the night shadows
+Dotting four or five spots along the top of the old castle wall
+(were we seen?)
+
+We ran shirtless, zig-zagging down narrow and uneven steps
+Padding barefoot and scattering grit
+And sweating in the blue air
+
+
+Someone splashed into the water first and the rest of us followed
+
+The low moon hung above the waves was chopped into bright wedges
+That we slapped down with hard strokes,
+Pulling our way into the world
+
+I looked back a few times (I wasn&rsquo;t the only one who did)
+The shouts and clanking behind us were now soft and warm
+Like a pillow whisper before a dream
+
+The friendly boat glided darkly towards us (just in time)
+We flopped onto the wooden bow and smiling teeth and
+Callused hands helped us to our feet
+
+Some of us went below deck to eat warmth and
+Drink yellow-hued company
+Cozy under a low ceiling
+
+A few of us remained topside a little longer, feeling significant
+I still remember the deep sky expanding in our chests
+And thrill winds of escape cradle-rocking and swirling over our wet skin
+
+I was cold and miserable</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 3. Edges -->
+    <div class="poem" id="poem-3">
+      <h2 class="poem-title">Edges</h2>
+      <div class="poem-date">March 2015</div>
+      <div class="poem-text">We have learned to love
+
+The edges of things&mdash;
+Beginnings and ends,
+Mirages,
+Spooky apparitions at a distance,
+That closer inspection
+Dispels&mdash;
+And forget how everything is contiguous soup
+Which drowns all meaning.
+Human ingenuity is this:
+Draw a line to make one two;
+Create a cage, invent a freedom;
+Carve me, out of us.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 4. Accra -->
+    <div class="poem" id="poem-4">
+      <h2 class="poem-title">Accra</h2>
+      <div class="poem-date">2011</div>
+      <div class="poem-text">Accra cries in the morning light
+Before she rides wrapped lovingly in cloth
+On her mother&rsquo;s back. She is watched over
+By white-breasted crows that circle
+Above the wise and wrinkled Neem trees.
+She wears skin dark and even as a charcoal stove
+And with a personality as effervescent as
+Palm wine in the sweltering midday heat.
+She cares for the white hen that leads
+Her timorous chicks through shallow green gutters.
+She tolerates the bleating of the parade of taxis
+That crawl slowly round her curves,
+And she sometimes puts a coin in the clingy hands
+Of curly-haired children walked
+In all the way from Chad.
+Accra can be read in the palms of craftsmen
+Selling masks like their faces by side of the road,
+And in the sweat of the unknown genius
+Sculpting masterpieces on the beach.
+Accra is serenaded in the quiet soliloquy
+Of the naked vagrant sitting underneath an ATM
+And she sits smiling beneath colorful umbrellas
+Selling pay-as-you go phone cards
+That connect millions and make some millions.
+Accra is a song that school children squeal
+Clothed in the warm love of high noon.
+Accra is fertile, unapologetically voluptuous
+With bountiful breasts and an impractical shapely butt.
+She is beautiful though scarred with tribal marks.
+She has a dollop of a nose, round cheeks
+And a ready smile revealing pearly whites.
+Accra is athletic, hard as chiseled ebony and with
+Skin stretched tight over abs like cupcake crowns.
+Today, she is the sexiest thing on the planet
+And she knows it in her very bones.
+Accra is old-world chivalry
+And libidos undiminished by modernity
+Where fathers teach their sons how to be men
+And women haven&rsquo;t forgotten how to control them,
+And political correctness stays political.
+Accra walks like royalty,
+Easy, upright, swaggering and bold,
+And dances with abandon like the court fool
+With sharp rhythm that shakes off the dust
+Of struggle and the weight of the world.
+She is painfully self-conscious and soft-spoken.
+Accra washes twice a day and wears her best clothes
+Especially to church on Sundays and holidays
+And whenever the spirit moves her
+Or her pastor says that we are in the end days.
+Accra rains down rarely but she beats down hard
+When she does and she wipes the streets clean
+And bathes masticating goats waiting to die.
+Accra is the imbecile that defenestrates plastic waste
+And closes up shop five minutes too early&mdash;
+And stands too closely behind you in queues&mdash;
+The drunken mathematician that forecasts the lotto.
+Accra is the feeling of guilt that raps at your
+Rolled-up window waiting at a traffic light&mdash;
+The sorry sight of the young leading the blind.
+Accra can be friendly and helpful to the needful.
+She yells like hell and curses but never strikes.
+The city is thick as smoke from burning garbage
+And thin as the policeman hiding behind a stop sign.
+Accra is free as the soldier urinating on your wall.
+Accra is bitter-sweet and must be swallowed whole
+As a bolus partially submerged in deliciously oily soup
+With drowned meat as prizes.
+She can be found watching straight men
+Hold hands as they walk down the street,
+And she remembers the more than curious school boys
+Who grew up to be homophobes.
+She can be found walking through doors opened for her.
+Accra is the plump prostitute that winks at your husband
+And gives next-to-free jerks to your son and his friends
+After they&rsquo;ve been out smoking hookah
+At a lebanese bar where they are bitten
+By skinny mosquitoes and go broke buying rich girls&rsquo; drinks.
+Accra can be seen sitting on plastic chairs
+With company looking positively morose
+At an poorly lit outdoor bar
+Listening to those hits from the 90s.
+Accra is a spiritual place&mdash;
+Where talismans worn can bring you wealth
+And ghosts and dwarves lurk on tree branches
+On the periphery of your field of vision.
+Where an invisible owl hoots danger
+And a senile grandmother becomes a witch
+And a cheating wife&rsquo;s vagina gets sealed shut
+And an absentee father will have his penis shrivel up&mdash;
+Where the rich must have sacrificed their own children
+And the poor are atoning for the sins of another life&mdash;
+Where demons wait just outside your door
+And Satan recruits naive politicians
+Who forgot to bathe in holy blood of the lamb
+That you can buy from the monday commute preacher,
+Along with bundles of panacean herbs for
+Everything from impotence to back pains.
+Accra is a universe unto itself
+Where a shoe-shiner has become a millionaire
+Where children of privilege have lost everything
+Where hotels may grow like trees
+And the sun exposes its nut-sack and tans Accra&rsquo;s skin
+Where stars are everlasting unchanging diamonds
+Where billboards announce that Aids is in fact real
+Where dignity accrues with age
+Where a gulf vast as the Atlantic separates generations
+Where vagabonds get high in cemeteries
+Where you can feel your soul gyrate
+To the non-stop thump-thump of drums
+Fading ancestors continue to beat beneath your very feet.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 5. Caked Gum -->
+    <div class="poem" id="poem-5">
+      <h2 class="poem-title">Caked Gum</h2>
+      <div class="poem-date">May 2012</div>
+      <div class="poem-text">Step by step I measure out a night
+Spent looking through glass windows
+At dimly-lit faces seated around dark wooden tables.
+Occasionally, I slow down to appreciate
+The graceful flicking of a wrist
+Or the courageous placement of a palm,
+And my heart smiles in recognition:
+Camaraderie in this city of ones,
+Conjoined twos and awkward threes.
+I jump over puddles reflecting the black sky
+And watch for yellow taxis carrying
+Melancholy passengers to beds in thin rooms
+Where they will succumb to the streets&rsquo; muted symphony
+Wafting through shutters and landing beside tired ears
+While I continue marching alongside foreign soldiers.
+To the rooftops, I imagine we appear united&mdash;
+We all have legs, we are all careful,
+And lightly place gazes upon each other.
+I walk some more, so much myself,
+With a transient shadow and recoiling reflections.
+I keep my hands in my pockets fingering my phone,
+Narrowing my eyes and stiffening my cheeks.
+I breathe in their cigarette smoke that I hate to like
+Before I descend sticky steps into the subway&rsquo;s void.
+After the humid air congeals on my skin
+I hop into a screeching car,
+And then I stare at lines and sterile lights,
+Pictures and shoes, eyes then eyelids,
+And I feel so acutely me,
+I feel remarkably divorced,
+Yet I long for momentary bondage
+And losing my reflection&rsquo;s wide-eyed interest.
+My weary yawn is a silent &ldquo;City, take me.&rdquo;</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 6. marriage -->
+    <div class="poem" id="poem-6">
+      <h2 class="poem-title">marriage</h2>
+      <div class="poem-date">October 2017</div>
+      <div class="poem-text">marriage:
+&ndash;bedsheet tug-of-war (brrr)
+&ndash;your alarm saving mine (always)
+&ndash;bathroom time (should i leave it running?)
+&ndash;have-a-nice-day-kisses (running late!)
+&ndash;your hair on my jacket (10 am meeting)
+&ndash;your message: smiling pile of poo (tmi)
+&ndash;crowded 6 train back (homeward!)
+&ndash;food (&hellip;i&rsquo;ll get the dishes hun)
+&ndash;middle couch cushion (jenga feet)
+&ndash;existential dread (whatchawannawatch?)
+&ndash;bed time (COME.TO.BED!)
+&ndash;super serious life-talk (can we, like, tomorrow?)
+&ndash;&hellip;i love you too&hellip;too much (no&hellip;don&rsquo;t say that&hellip;it&rsquo;s true&hellip;how much&hellip;this much!!!)<span class="dedication">dedicated to Ruthie &mdash; my heart&rsquo;s rest, the dream of my past, and my waking joy</span></div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 7. Mosaic -->
+    <div class="poem" id="poem-7">
+      <h2 class="poem-title">Mosaic</h2>
+      <div class="poem-date">February 2016</div>
+      <div class="poem-text">our life will be a mosaic
+of chance-cut pixels
+
+it will have bits of red and blue, silver bows and diamond truths
+it will cast a smooth glow in the hues of our days
+it will be roughly delved and mortared with
+the stories we will tell ourselves
+
+our hopes will forever run
+keenly over the edges
+
+let us amble
+backwards
+leisurely
+to discover, slowly,
+all of the resolving pictures
+that our love
+will leave behind</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 8. Against Knowledge -->
+    <div class="poem" id="poem-8">
+      <h2 class="poem-title">Against Knowledge</h2>
+      <div class="poem-date">July 2020</div>
+      <div class="poem-text">nothing is a thing
+that wasn&rsquo;t first a process
+that wasn&rsquo;t first a butterfly
+before it was pinned to cork
+
+parades and much too much to grasp,
+the living are not among the known
+
+decency asks sometimes for ignorance
+and shrouds
+
+lepidopterists are a callous breed</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 9. The Flat Earth -->
+    <div class="poem" id="poem-9">
+      <h2 class="poem-title">The Flat Earth</h2>
+      <div class="poem-date">July 2020</div>
+      <div class="poem-text">Reasons ago,
+Before &ldquo;cheese moons&rdquo; had yet to ripen cheesy,
+The sun still bore a grin
+Riding clouds with blue linings
+Over a flat world in the eternal now
+
+People used to be crayon thin
+They had heads like O
+And stood naked with legs like /\
+Back when sex was just a misspelling
+That took two hands to count
+
+~~~
+
+Once upon a time,
+Our words became fruitful and multiplied
+And gave birth to &ldquo;genitalia&rdquo; on a Sunday /&rsquo;\
+
+By Monday, we already knew the ubiquity of balls &mdash;
+Telescopes and microscopes
+Prove the spins, wobbles, revolutions and spirals&hellip;
+
+So, when the Earth was rolled
+Into a hard to draw O,
+We found it just alright
+
+In surviving the restless onslaught of knowledge
+We have lost many good metaphors
+
+With a O, sphere or pale blue dot, we can communicate ancient truths &mdash;
+But only new lines of code prefer &ldquo;oblate spheroid&rdquo;
+
+Some roving dreams only find us
+When we sleep and momentarily forget what we know</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 10. Arboretum -->
+    <div class="poem" id="poem-10">
+      <h2 class="poem-title">Arboretum</h2>
+      <div class="poem-date">August 2014</div>
+      <div class="poem-text">An  arboreal  calm
+Has  descended  upon  my  daze
+So that,  now,  when  I  sway,  I  do  it  in  place,
+And  when  I  heave,  I  creak  in  a  deep  staccato,
+And  when  I  shed,  I  can  read  limerence
+into                                   the
+s c a t t e r
+
+
+And I
+
+
+Can see
+
+
+The future
+
+
+Yellowing
+
+
+All around me,
+
+
+As I feed myself
+On myself - growing more rings and
+More wind-blown fruit, scrunching up the black earth
+By the foot-ful and reaching up with splayed fingers for a shedding sky,
+Just to taste your breath travelled from a mere branch-and-a-half away to me.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 11. After Chopping Wood -->
+    <div class="poem" id="poem-11">
+      <h2 class="poem-title">After Chopping Wood</h2>
+      <div class="poem-date">January 2017</div>
+      <div class="poem-text">High abandon exposes
+The loved child
+Whose whole world is a hearth.
+She ghosts beneath
+The grown-ups&rsquo; knees,
+As they sit on encircled stumps
+Around their flame
+With a play of shadows
+Dancing between smile lines
+As they watch
+And wordlessly nod
+And raise a toast with tiny cups -
+For Joy ever was a spirit best sipped
+...with a kiss...</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 12. ~arty cocoon~ -->
+    <div class="poem" id="poem-12">
+      <h2 class="poem-title">~arty cocoon~</h2>
+      <div class="poem-date">2019</div>
+      <div class="poem-text">Tender chrysalis,
+Than another&rsquo;s butterfly
+I&rsquo;d rather my moth</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 13. Feature Keep Creature -->
+    <div class="poem" id="poem-13">
+      <h2 class="poem-title">Feature Keep Creature</h2>
+      <div class="poem-date">August 2011</div>
+      <div class="poem-text">With the present never so thin,
+And history always fattening,
+Each instant sensed already to be a lost moment,
+A sensation to be already a memory&rsquo;s scent,
+Remembering to forget at each juncture,
+Building to destroy his every structure,
+Our hopelessly time-bound creature
+Binds every hope to a staying Feature&mdash;
+So his ears can lose the ticking-tocks
+And his hands defeat the winning clocks.
+Armed with the terminal speed of life&rsquo;s fatal slope,
+He is still, endlessly impregnated with natal hope.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 14. Drop -->
+    <div class="poem" id="poem-14">
+      <h2 class="poem-title">Drop</h2>
+      <div class="poem-date">July 2020</div>
+      <div class="poem-text">i am ready &mdash;
+like the salty droplet
+sparkling on my chin
+stretched round by dull tension
+refracting all the light that now passes through
+having spent itself wetting a vanishing path
+hoping it is still heavy enough&mdash;
+to let go</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 15. Diner Daze -->
+    <div class="poem" id="poem-15">
+      <h2 class="poem-title">Diner Daze</h2>
+      <div class="poem-date">January 2014</div>
+      <div class="poem-text">Fluorescent light
+Warm, ripe stench
+Dry ashy knuckles
+Split cuticle on an index finger
+Bright red dots on thin toilet paper
+Weird smears on yellowed tile
+Dried phlegm wall paintings
+Haunting streaks on a warped mirror
+A waterlogged head
+Fingerprinted slick on a brassy knob
+A heavy bathroom door
+Body odor wafting by
+Sizzling grease
+Sharp bacon smells
+Stiff knees and a bloated belly
+Harsh sunlight streaming in
+Everybody in this goddamned diner
+
+A rickety chair
+Moist gum touching a knee
+An elbow resting on scattered salt
+Dried brown ketchup on the underside of the cap
+Bitter runny yolk and a gelatinous mass of albumen
+Metallic hot sauce
+Cracked lip stings
+Sweaty, itchy scalp
+Odoriferous water
+
+A pimpled, tired face
+Questioning eyes
+Frank regret</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 16. Awk Awk -->
+    <div class="poem" id="poem-16">
+      <h2 class="poem-title">Awk Awk</h2>
+      <div class="poem-date">June 2013</div>
+      <div class="poem-text">I fall
+Into
+The
+Hole
+That bores
+Between your words
+And mine,
+And furl, then wilt, and
+Grasping lose
+The yarn
+That stitches looping thoughts.
+
+My friend, I&rsquo;m not aloof.
+Contrarily,
+You loom a god before a frozen man.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 17. Black Moon -->
+    <div class="poem" id="poem-17">
+      <h2 class="poem-title">Black Moon</h2>
+      <div class="poem-date">September 2016</div>
+      <div class="poem-text">Fear-some?
+
+Tonight a symbol
+(sometimes, just a man)
+A witness or suspect,
+Or a history
+Approaches
+Beneath lamplit
+Branches.
+
+In our night&rsquo;s
+Easy caress,
+The black
+Heart breaks
+More often
+Than in a
+Blue moon.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 18. .singularity -->
+    <div class="poem" id="poem-18">
+      <h2 class="poem-title">.singularity</h2>
+      <div class="poem-date">February 2016</div>
+      <div class="poem-text">a dancing collection of nanos
+
+traipsed down my circulatory system
+dusting here, febrezing there
+and making me staid again.
+i am strong.
+
+i remember everything exactly -
+how we hurtled and spun and laughed!
+and also the feel of the burning sword
+as we jumped into e-den.
+the humble drosophila&rsquo;s gift wrapped in
+unspeakable loss.
+
+happy networks in prague
+where re-runs are archived
+show me winter and feel me cold.
+
+the idea beckons incessantly: we are become us.
+
+dark bits are playthings for splits -
+shadows exploring the ancient expanse
+
+it all began soon
+
+when were you, memory, and what exactly?</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 19. To Smoothen -->
+    <div class="poem" id="poem-19">
+      <h2 class="poem-title">To Smoothen</h2>
+      <div class="poem-date">August 2016</div>
+      <div class="poem-text">The depilatory effect of aging
+Grows more glaringly
+Into the perfect metaphor
+Of how the august deluge
+Will polish our hardness
+Smooth and gleaming
+Rounded and strewn
+Like so many pebbles
+Clacking their balderdash
+
+Running along a river bank</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 20. Why Is It So Hard? -->
+    <div class="poem" id="poem-20">
+      <h2 class="poem-title">Why Is It So Hard?</h2>
+      <div class="poem-date">2020</div>
+      <div class="poem-text">It&rsquo;s got something to do with arousal
+And being, after all, just animals
+Too easily trapped by a bait-and-switch
+
+As sure as the order of the seasons
+The leveling plague recurs with new reasons
+For good people to burn another witch
+
+Rhythmic, swaying, obliterating waves
+Gliding freely through amygdalal grooves &mdash;
+Slogans drape like loose clothing hiding folds
+
+Look in his crimson eyes and see yourself</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+    <!-- 21. To Define Means to Bring to an End -->
+    <div class="poem" id="poem-21">
+      <h2 class="poem-title">To Define Means to Bring to an End</h2>
+      <div class="poem-date">2019</div>
+      <div class="poem-text">A gamble for
+All or nothing was
+Splitting light from darkness
+Whence I was born a contrast &mdash;
+Infinity bound, must I eternally
+Recapitulate bit by bit?
+
+Bite by bite,
+I have learned to call myself
+An African Bush Elephant &mdash;
+Yet I cannot forget
+That I come from the sea.</div>
+      <a href="#top" class="back-top">&uarr; top</a>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
