@@ -27,7 +27,9 @@ html { scroll-behavior: smooth; }
   --accent-dim: rgba(77, 168, 255, 0.1);
   --accent-glow: rgba(77, 168, 255, 0.35);
   --warm: #e8b04a;
+  --warm-bright: #f0c462;
   --warm-dim: rgba(232, 176, 74, 0.1);
+  --warm-glow: rgba(232, 176, 74, 0.35);
   --purple: #a78bfa;
   --coral: #e8916d;
   --surface: rgba(120, 170, 255, 0.05);
@@ -175,45 +177,53 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--warm);
   margin-bottom: 20px;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeUp 0.8s 0.3s forwards;
 }
 
-.hero__name {
-  font-family: var(--font-heading);
-  font-size: clamp(3.2rem, 8vw, 5.5rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  margin-bottom: 28px;
+.hero__poem-fragment {
+  font-family: var(--font-poem);
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--warm-bright);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  margin-bottom: 40px;
+  max-width: 560px;
   opacity: 0;
   transform: translateY(30px);
   animation: fadeUp 0.8s 0.5s forwards;
 }
 
-.hero__name .accent {
-  background: linear-gradient(135deg, var(--accent-bright), var(--accent-electric));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero__bio {
-  font-size: 1.15rem;
-  line-height: 1.75;
+.hero__name {
+  font-family: var(--font-heading);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  font-weight: 600;
   color: var(--text-secondary);
-  max-width: 540px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeUp 0.8s 0.7s forwards;
 }
 
+.hero__bio {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-width: 540px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.8s 0.85s forwards;
+}
+
 .hero__bio em {
-  color: var(--accent-bright);
+  color: var(--warm-bright);
   font-style: normal;
 }
 
@@ -225,7 +235,7 @@ a { color: inherit; text-decoration: none; }
   margin-top: 4px;
   opacity: 0;
   transform: translateY(20px);
-  animation: fadeUp 0.8s 0.9s forwards;
+  animation: fadeUp 0.8s 1.0s forwards;
 }
 
 .hero__meta span {
@@ -254,37 +264,8 @@ a { color: inherit; text-decoration: none; }
   border-color: var(--accent);
 }
 
-.hero__scroll-cue {
-  position: absolute;
-  bottom: 48px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0;
-  animation: fadeUp 0.8s 1.2s forwards;
-}
-
-.hero__scroll-line {
-  width: 1px;
-  height: 40px;
-  background: linear-gradient(to bottom, var(--accent), transparent);
-  animation: pulse-line 2s infinite;
-}
-
 @keyframes fadeUp {
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-line {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
 }
 
 /* ===== Divider between hero and works ===== */
@@ -299,7 +280,7 @@ a { color: inherit; text-decoration: none; }
 
 .divider__line {
   height: 1px;
-  background: linear-gradient(to right, transparent, var(--accent), transparent);
+  background: linear-gradient(to right, transparent, var(--warm), transparent);
   opacity: 0.3;
 }
 
@@ -310,6 +291,63 @@ a { color: inherit; text-decoration: none; }
   max-width: 900px;
   margin: 0 auto;
   padding: 40px 40px 120px;
+}
+
+/* ===== Work Group Headers ===== */
+.works__group {
+  margin-bottom: 20px;
+}
+
+.works__group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 0 0;
+  margin-bottom: 0;
+}
+
+.works__group:first-child .works__group-header {
+  padding-top: 20px;
+}
+
+.works__group-label {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.works__group-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.works__group--poems .works__group-label { color: var(--warm); }
+.works__group--poems .works__group-label::before { background: var(--warm); box-shadow: 0 0 10px var(--warm); }
+.works__group--builds .works__group-label { color: var(--accent-bright); }
+.works__group--builds .works__group-label::before { background: var(--accent-bright); box-shadow: 0 0 10px var(--accent); }
+.works__group--research .works__group-label { color: var(--purple); }
+.works__group--research .works__group-label::before { background: var(--purple); box-shadow: 0 0 10px var(--purple); }
+.works__group--art .works__group-label { color: var(--coral); }
+.works__group--art .works__group-label::before { background: var(--coral); box-shadow: 0 0 10px var(--coral); }
+
+.works__see-all {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+
+.works__see-all:hover {
+  color: var(--text-primary);
 }
 
 /* ===== Individual Work ===== */
@@ -383,7 +421,7 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.01em;
   max-width: 600px;
   padding-left: 24px;
-  border-left: 2px solid var(--border);
+  border-left: 2px solid rgba(232, 176, 74, 0.25);
 }
 
 .work__poem .dedication {
@@ -399,11 +437,11 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-poem);
   font-size: clamp(1.4rem, 3vw, 1.8rem);
   line-height: 1.5;
-  color: var(--accent-bright);
+  color: var(--warm-bright);
   font-style: italic;
   margin: 48px 0 40px -24px;
   padding-left: 24px;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--warm);
   max-width: 600px;
   opacity: 0.9;
 }
@@ -466,9 +504,21 @@ a { color: inherit; text-decoration: none; }
 
 .work__image {
   width: 100%;
-  max-width: 500px;
-  border-radius: 8px;
+  max-width: 720px;
+  border-radius: 4px;
   display: block;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(120, 170, 255, 0.06);
+  margin: 12px 0 20px -60px;
+}
+
+@media (max-width: 640px) {
+  .work__image {
+    max-width: 100%;
+    margin-left: 0;
+    padding: 16px;
+  }
 }
 
 /* ===== About ===== */
@@ -487,7 +537,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--warm);
   margin-bottom: 32px;
 }
 
@@ -603,7 +653,6 @@ a { color: inherit; text-decoration: none; }
   .about__content { grid-template-columns: 1fr; }
   .about__photo { width: 100px; height: 100px; }
   .footer { padding: 24px 24px 36px; flex-direction: column; gap: 12px; }
-  .hero__scroll-cue { display: none; }
 }
   </style>
 </head>
@@ -629,14 +678,11 @@ a { color: inherit; text-decoration: none; }
   <section class="hero">
     <canvas class="hero__canvas" id="constellation"></canvas>
     <p class="hero__overtitle">Poetry &middot; Software &middot; Research &middot; Art</p>
-    <h1 class="hero__name">Rodney<br><span class="accent">Jehu</span></h1>
+    <div class="hero__poem-fragment">Draw a line to make one two;<br>Create a cage, invent a freedom;<br>Carve me, out of us.</div>
+    <h1 class="hero__name">Rodney Jehu</h1>
     <p class="hero__bio">I make things with <em>language</em> &mdash; sometimes as poems, sometimes as software, sometimes as theory about what language does to the minds that use it.</p>
     <div class="hero__meta">
       <a href="https://x.com/rjehuappiah" target="_blank" rel="noopener">&#120143; &thinsp;@rjehuappiah</a>
-    </div>
-    <div class="hero__scroll-cue">
-      <span>Scroll</span>
-      <div class="hero__scroll-line"></div>
     </div>
   </section>
 
@@ -646,102 +692,73 @@ a { color: inherit; text-decoration: none; }
   <!-- Works -->
   <section class="works" id="works">
 
-    <!-- 1. Against Knowledge -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Against Knowledge</h2>
-      <p class="work__date">July 2020</p>
-      <div class="work__poem">nothing is a thing
-that wasn&rsquo;t first a process
-that wasn&rsquo;t first a butterfly
-before it was pinned to cork
+    <!-- ===== RESEARCH ===== -->
+    <div class="works__group works__group--research">
+      <div class="works__group-header">
+        <span class="works__group-label">Research</span>
+      </div>
 
-parades and much too much to grasp,
-the living are not among the known
+      <article class="work">
+        <h2 class="work__title">Umwelt Engineering</h2>
+        <p class="work__date">2026</p>
+        <p class="work__description">A framework for designing the linguistic cognitive environments AI agents reason in. If prompt engineering is what you say, and context engineering is what you show, then umwelt engineering is the world the agent can think in &mdash; shaped by the vocabulary it&rsquo;s allowed to use.</p>
+        <p class="work__description">4,470 trials across 4 models. Removing the verb &ldquo;to be&rdquo; selectively degrades syllogistic reasoning while leaving causal reasoning intact. The constraint doesn&rsquo;t make the model dumber &mdash; it reshapes <em>what kinds of thinking</em> are available.</p>
+        <a href="https://github.com/rodspeed/umwelt-engineering" class="work__link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          Paper + Code + Data
+        </a>
+      </article>
+    </div>
 
-decency asks sometimes for ignorance
-and shrouds
+    <!-- ===== BUILDS ===== -->
+    <div class="works__group works__group--builds">
+      <div class="works__group-header">
+        <span class="works__group-label">Builds</span>
+        <a href="blog/" class="works__see-all">See all writing &rarr;</a>
+      </div>
 
-lepidopterists are a callous breed</div>
-    </article>
+      <article class="work">
+        <h2 class="work__title">Claude Code Is Not a Code Editor</h2>
+        <p class="work__date">March 2026</p>
+        <p class="work__description">Most people use Claude Code to write functions. I turned it into a personal operating system &mdash; one that shops for me, builds a wiki from my conversations, stress-tests my ideas, and remembers who I am across sessions. Skills, hooks, memory, handoffs, and meta-agents: patterns for using an LLM as a general-purpose automation tool.</p>
+        <a href="blog/claude-code-beyond-coding.html" class="work__link">
+          Read &rarr;
+        </a>
+      </article>
 
-    <!-- Claude Code Essay -->
-    <article class="work">
-      <span class="work__type work__type--build">Essay</span>
-      <h2 class="work__title">Claude Code Is Not a Code Editor</h2>
-      <p class="work__date">March 2026</p>
-      <p class="work__description">Most people use Claude Code to write functions. I turned it into a personal operating system &mdash; one that shops for me, builds a wiki from my conversations, stress-tests my ideas, and remembers who I am across sessions. Skills, hooks, memory, handoffs, and meta-agents: patterns for using an LLM as a general-purpose automation tool.</p>
-      <a href="blog/claude-code-beyond-coding.html" class="work__link">
-        Read &rarr;
-      </a>
-    </article>
+      <article class="work">
+        <h2 class="work__title">Epistemic Memory</h2>
+        <p class="work__date">2026</p>
+        <div class="work__pullquote">What should a machine remember about a person?</div>
+        <p class="work__description">A protocol for AI memory that models who you are &mdash; with confidence scores, belief decay, contradiction tracking, and the humility to hold its understanding as hypothesis rather than fact. Because a tool that pattern-matches you into a fixed version of yourself stops actually seeing you.</p>
+        <a href="https://github.com/rodspeed/epistemic-memory" class="work__link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </article>
 
-    <!-- 2. Epistemic Memory -->
-    <article class="work">
-      <span class="work__type work__type--build">Build</span>
-      <h2 class="work__title">Epistemic Memory</h2>
-      <p class="work__date">2026</p>
-      <div class="work__pullquote">What should a machine remember about a person?</div>
-      <p class="work__description">A protocol for AI memory that models who you are &mdash; with confidence scores, belief decay, contradiction tracking, and the humility to hold its understanding as hypothesis rather than fact. Because a tool that pattern-matches you into a fixed version of yourself stops actually seeing you.</p>
-      <a href="https://github.com/rodspeed/epistemic-memory" class="work__link" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-    </article>
+      <article class="work">
+        <h2 class="work__title">Heartwood</h2>
+        <p class="work__date">2026</p>
+        <p class="work__description">A personal knowledge graph that compounds over time. Local-first architecture with Three.js visualization, semantic wikilinks, and a reasoning engine that does belief revision and link prediction across your notes. Built because I needed a place where everything I learn could talk to everything else.</p>
+        <a href="https://github.com/rodspeed/heartwood" class="work__link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </article>
+    </div>
 
-    <!-- 3. Drop -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Drop</h2>
-      <p class="work__date">July 2020</p>
-      <div class="work__poem">i am ready &mdash;
-like the salty droplet
-sparkling on my chin
-stretched round by dull tension
-refracting all the light that now passes through
-having spent itself wetting a vanishing path
-hoping it is still heavy enough&mdash;
-to let go</div>
-    </article>
+    <!-- ===== POEMS ===== -->
+    <div class="works__group works__group--poems">
+      <div class="works__group-header">
+        <span class="works__group-label">Poems</span>
+        <a href="poetry-archive.html" class="works__see-all">See all poems &rarr;</a>
+      </div>
 
-    <!-- 4. To Define Means to Bring to an End -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">To Define Means to Bring to an End</h2>
-      <p class="work__date">2019</p>
-      <div class="work__poem">A gamble for
-All or nothing was
-Splitting light from darkness
-Whence I was born a contrast &mdash;
-Infinity bound, must I eternally
-Recapitulate bit by bit?
-
-Bite by bite,
-I have learned to call myself
-An African Bush Elephant &mdash;
-Yet I cannot forget
-That I come from the sea.</div>
-    </article>
-
-    <!-- 5. Umwelt Engineering -->
-    <article class="work">
-      <span class="work__type work__type--research">Research</span>
-      <h2 class="work__title">Umwelt Engineering</h2>
-      <p class="work__date">2026</p>
-      <p class="work__description">A framework for designing the linguistic cognitive environments AI agents reason in. If prompt engineering is what you say, and context engineering is what you show, then umwelt engineering is the world the agent can think in &mdash; shaped by the vocabulary it&rsquo;s allowed to use.</p>
-      <p class="work__description">4,470 trials across 4 models. Removing the verb &ldquo;to be&rdquo; selectively degrades syllogistic reasoning while leaving causal reasoning intact. The constraint doesn&rsquo;t make the model dumber &mdash; it reshapes <em>what kinds of thinking</em> are available.</p>
-      <a href="https://github.com/rodspeed/umwelt-engineering" class="work__link" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        Paper + Code + Data
-      </a>
-    </article>
-
-    <!-- 5. Rain Dancer -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Rain Dancer</h2>
-      <p class="work__date">July 2020</p>
-      <div class="work__poem">she squinted at us in the
+      <article class="work">
+        <h2 class="work__title">Rain Dancer</h2>
+        <p class="work__date">July 2020</p>
+        <div class="work__poem">she squinted at us in the
 gathering dust and trapped
 a few hard-won tears in her crow&rsquo;s feet
 her white hair flailing wildly
@@ -779,35 +796,12 @@ she took her last bow in the crashing applause
 plunged backwards
 through the falling curtains
 and exhaled fragrant petrichor</div>
-    </article>
+      </article>
 
-    <!-- 6. Rio -->
-    <article class="work">
-      <span class="work__type work__type--drawing">Drawing</span>
-      <h2 class="work__title">Rio</h2>
-      <p class="work__date">2021</p>
-      <img class="work__image" src="rio.jpg" alt="Rio — colored pencil portrait" />
-      <p class="work__description">Colored pencil portrait. Fauvist green palette.</p>
-    </article>
-
-    <!-- 7. Heartwood -->
-    <article class="work">
-      <span class="work__type work__type--build">Build</span>
-      <h2 class="work__title">Heartwood</h2>
-      <p class="work__date">2026</p>
-      <p class="work__description">A personal knowledge graph that compounds over time. Local-first architecture with Three.js visualization, semantic wikilinks, and a reasoning engine that does belief revision and link prediction across your notes. Built because I needed a place where everything I learn could talk to everything else.</p>
-      <a href="https://github.com/rodspeed/heartwood" class="work__link" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-    </article>
-
-    <!-- 8. marriage -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">marriage</h2>
-      <p class="work__date">October 2017</p>
-      <div class="work__poem">marriage:
+      <article class="work">
+        <h2 class="work__title">marriage</h2>
+        <p class="work__date">October 2017</p>
+        <div class="work__poem">marriage:
 &ndash;bedsheet tug-of-war (brrr)
 &ndash;your alarm saving mine (always)
 &ndash;bathroom time (should i leave it running?)
@@ -821,23 +815,29 @@ and exhaled fragrant petrichor</div>
 &ndash;bed time (COME.TO.BED!)
 &ndash;super serious life-talk (can we, like, tomorrow?)
 &ndash;&hellip;i love you too&hellip;too much (no&hellip;don&rsquo;t say that&hellip;it&rsquo;s true&hellip;how much&hellip;this much!!!)<span class="dedication">dedicated to Ruthie &mdash; my heart&rsquo;s rest, the dream of my past, and my waking joy</span></div>
-    </article>
+      </article>
 
-    <!-- 9. Awkwafina -->
-    <article class="work">
-      <span class="work__type work__type--drawing">Drawing</span>
-      <h2 class="work__title">Awkwafina</h2>
-      <p class="work__date">2021</p>
-      <img class="work__image" src="awkwafina.jpg" alt="Awkwafina — colored pencil portrait" />
-      <p class="work__description">Colored pencil portrait.</p>
-    </article>
+      <article class="work">
+        <h2 class="work__title">Against Knowledge</h2>
+        <p class="work__date">July 2020</p>
+        <div class="work__poem">nothing is a thing
+that wasn&rsquo;t first a process
+that wasn&rsquo;t first a butterfly
+before it was pinned to cork
 
-    <!-- 10. Edges -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Edges</h2>
-      <p class="work__date">March 2015</p>
-      <div class="work__poem">We have learned to love
+parades and much too much to grasp,
+the living are not among the known
+
+decency asks sometimes for ignorance
+and shrouds
+
+lepidopterists are a callous breed</div>
+      </article>
+
+      <article class="work">
+        <h2 class="work__title">Edges</h2>
+        <p class="work__date">March 2015</p>
+        <div class="work__poem">We have learned to love
 
 The edges of things&mdash;
 Beginnings and ends,
@@ -851,278 +851,36 @@ Human ingenuity is this:
 Draw a line to make one two;
 Create a cage, invent a freedom;
 Carve me, out of us.</div>
-    </article>
+      </article>
+    </div>
 
-    <!-- 11. Drapetes -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Drapetes</h2>
-      <p class="work__date">June 2017</p>
-      <div class="work__poem">Round orbs of fire glowed against the night shadows
-Dotting four or five spots along the top of the old castle wall
-(were we seen?)
+    <!-- ===== ART ===== -->
+    <div class="works__group works__group--art">
+      <div class="works__group-header">
+        <span class="works__group-label">Drawings</span>
+      </div>
 
-We ran shirtless, zig-zagging down narrow and uneven steps
-Padding barefoot and scattering grit
-And sweating in the blue air
+      <article class="work">
+        <h2 class="work__title">Rio</h2>
+        <p class="work__date">2021</p>
+        <img class="work__image" src="rio.jpg" alt="Rio — colored pencil portrait" />
+        <p class="work__description">Colored pencil portrait. Fauvist green palette.</p>
+      </article>
 
+      <article class="work">
+        <h2 class="work__title">Awkwafina</h2>
+        <p class="work__date">2021</p>
+        <img class="work__image" src="awkwafina.jpg" alt="Awkwafina — colored pencil portrait" />
+        <p class="work__description">Colored pencil portrait.</p>
+      </article>
 
-Someone splashed into the water first and the rest of us followed
-
-The low moon hung above the waves was chopped into bright wedges
-That we slapped down with hard strokes,
-Pulling our way into the world
-
-I looked back a few times (I wasn&rsquo;t the only one who did)
-The shouts and clanking behind us were now soft and warm
-Like a pillow whisper before a dream
-
-The friendly boat glided darkly towards us (just in time)
-We flopped onto the wooden bow and smiling teeth and
-Callused hands helped us to our feet
-
-Some of us went below deck to eat warmth and
-Drink yellow-hued company
-Cozy under a low ceiling
-
-A few of us remained topside a little longer, feeling significant
-I still remember the deep sky expanding in our chests
-And thrill winds of escape cradle-rocking and swirling over our wet skin
-
-I was cold and miserable</div>
-    </article>
-
-    <!-- 12. Elephants -->
-    <article class="work">
-      <span class="work__type work__type--drawing">Drawing</span>
-      <h2 class="work__title">Elephants</h2>
-      <p class="work__date">2020</p>
-      <img class="work__image" src="elephants.jpg" alt="Elephants — colored pencil" />
-      <p class="work__description">Colored pencil.</p>
-    </article>
-
-    <!-- 13. The Flat Earth -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">The Flat Earth</h2>
-      <p class="work__date">July 2020</p>
-      <div class="work__poem">Reasons ago,
-Before &ldquo;cheese moons&rdquo; had yet to ripen cheesy,
-The sun still bore a grin
-Riding clouds with blue linings
-Over a flat world in the eternal now
-
-People used to be crayon thin
-They had heads like O
-And stood naked with legs like /\
-Back when sex was just a misspelling
-That took two hands to count
-
-~~~
-
-Once upon a time,
-Our words became fruitful and multiplied
-And gave birth to &ldquo;genitalia&rdquo; on a Sunday /&rsquo;\
-
-By Monday, we already knew the ubiquity of balls &mdash;
-Telescopes and microscopes
-Prove the spins, wobbles, revolutions and spirals&hellip;
-
-So, when the Earth was rolled
-Into a hard to draw O,
-We found it just alright
-
-In surviving the restless onslaught of knowledge
-We have lost many good metaphors
-
-With a O, sphere or pale blue dot, we can communicate ancient truths &mdash;
-But only new lines of code prefer &ldquo;oblate spheroid&rdquo;
-
-Some roving dreams only find us
-When we sleep and momentarily forget what we know</div>
-    </article>
-
-    <!-- 14. Accra -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Accra</h2>
-      <p class="work__date">2011</p>
-      <div class="work__poem">Accra cries in the morning light
-Before she rides wrapped lovingly in cloth
-On her mother&rsquo;s back. She is watched over
-By white-breasted crows that circle
-Above the wise and wrinkled Neem trees.
-She wears skin dark and even as a charcoal stove
-And with a personality as effervescent as
-Palm wine in the sweltering midday heat.
-She cares for the white hen that leads
-Her timorous chicks through shallow green gutters.
-She tolerates the bleating of the parade of taxis
-That crawl slowly round her curves,
-And she sometimes puts a coin in the clingy hands
-Of curly-haired children walked
-In all the way from Chad.
-Accra can be read in the palms of craftsmen
-Selling masks like their faces by side of the road,
-And in the sweat of the unknown genius
-Sculpting masterpieces on the beach.
-Accra is serenaded in the quiet soliloquy
-Of the naked vagrant sitting underneath an ATM
-And she sits smiling beneath colorful umbrellas
-Selling pay-as-you go phone cards
-That connect millions and make some millions.
-Accra is a song that school children squeal
-Clothed in the warm love of high noon.
-Accra is fertile, unapologetically voluptuous
-With bountiful breasts and an impractical shapely butt.
-She is beautiful though scarred with tribal marks.
-She has a dollop of a nose, round cheeks
-And a ready smile revealing pearly whites.
-Accra is athletic, hard as chiseled ebony and with
-Skin stretched tight over abs like cupcake crowns.
-Today, she is the sexiest thing on the planet
-And she knows it in her very bones.
-Accra is old-world chivalry
-And libidos undiminished by modernity
-Where fathers teach their sons how to be men
-And women haven&rsquo;t forgotten how to control them,
-And political correctness stays political.
-Accra walks like royalty,
-Easy, upright, swaggering and bold,
-And dances with abandon like the court fool
-With sharp rhythm that shakes off the dust
-Of struggle and the weight of the world.
-She is painfully self-conscious and soft-spoken.
-Accra washes twice a day and wears her best clothes
-Especially to church on Sundays and holidays
-And whenever the spirit moves her
-Or her pastor says that we are in the end days.
-Accra rains down rarely but she beats down hard
-When she does and she wipes the streets clean
-And bathes masticating goats waiting to die.
-Accra is the imbecile that defenestrates plastic waste
-And closes up shop five minutes too early&mdash;
-And stands too closely behind you in queues&mdash;
-The drunken mathematician that forecasts the lotto.
-Accra is the feeling of guilt that raps at your
-Rolled-up window waiting at a traffic light&mdash;
-The sorry sight of the young leading the blind.
-Accra can be friendly and helpful to the needful.
-She yells like hell and curses but never strikes.
-The city is thick as smoke from burning garbage
-And thin as the policeman hiding behind a stop sign.
-Accra is free as the soldier urinating on your wall.
-Accra is bitter-sweet and must be swallowed whole
-As a bolus partially submerged in deliciously oily soup
-With drowned meat as prizes.
-She can be found watching straight men
-Hold hands as they walk down the street,
-And she remembers the more than curious school boys
-Who grew up to be homophobes.
-She can be found walking through doors opened for her.
-Accra is the plump prostitute that winks at your husband
-And gives next-to-free jerks to your son and his friends
-After they&rsquo;ve been out smoking hookah
-At a lebanese bar where they are bitten
-By skinny mosquitoes and go broke buying rich girls&rsquo; drinks.
-Accra can be seen sitting on plastic chairs
-With company looking positively morose
-At an poorly lit outdoor bar
-Listening to those hits from the 90s.
-Accra is a spiritual place&mdash;
-Where talismans worn can bring you wealth
-And ghosts and dwarves lurk on tree branches
-On the periphery of your field of vision.
-Where an invisible owl hoots danger
-And a senile grandmother becomes a witch
-And a cheating wife&rsquo;s vagina gets sealed shut
-And an absentee father will have his penis shrivel up&mdash;
-Where the rich must have sacrificed their own children
-And the poor are atoning for the sins of another life&mdash;
-Where demons wait just outside your door
-And Satan recruits naive politicians
-Who forgot to bathe in holy blood of the lamb
-That you can buy from the monday commute preacher,
-Along with bundles of panacean herbs for
-Everything from impotence to back pains.
-Accra is a universe unto itself
-Where a shoe-shiner has become a millionaire
-Where children of privilege have lost everything
-Where hotels may grow like trees
-And the sun exposes its nut-sack and tans Accra&rsquo;s skin
-Where stars are everlasting unchanging diamonds
-Where billboards announce that Aids is in fact real
-Where dignity accrues with age
-Where a gulf vast as the Atlantic separates generations
-Where vagabonds get high in cemeteries
-Where you can feel your soul gyrate
-To the non-stop thump-thump of drums
-Fading ancestors continue to beat beneath your very feet.</div>
-    </article>
-
-    <!-- 15. ~melancholy~ -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">~melancholy~</h2>
-      <p class="work__date">2019</p>
-      <div class="work__poem">the searing rays of day-long noon
-flatten the landscape and bleach the colors &mdash;
-but in the low half-light
-i easily spot the road&rsquo;s edge
-and my traveler shadow stretches forth &mdash;
-i bless the passing cloud
-that releases me from a frown
-and raise my head in the shade</div>
-    </article>
-
-    <!-- 16. \stretch/ -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">\stretch/</h2>
-      <p class="work__date">2019</p>
-      <div class="work__poem">the problem is you&rsquo;re too convoluted
-it&rsquo;s these small rooms that make you feel awkward
-
-homelessness is a sentence commuted &mdash;
-stretch outside where you can unfurl skyward
-
-life under low ceilings makes you stooped</div>
-    </article>
-
-    <!-- 17. Mosaic -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">Mosaic</h2>
-      <p class="work__date">February 2016</p>
-      <div class="work__poem">our life will be a mosaic
-of chance-cut pixels
-
-it will have bits of red and blue, silver bows and diamond truths
-it will cast a smooth glow in the hues of our days
-it will be roughly delved and mortared with
-the stories we will tell ourselves
-
-our hopes will forever run
-keenly over the edges
-
-let us amble
-backwards
-leisurely
-to discover, slowly,
-all of the resolving pictures
-that our love
-will leave behind</div>
-    </article>
-
-    <!-- 18. ~arty cocoon~ -->
-    <article class="work">
-      <span class="work__type work__type--poem">Poem</span>
-      <h2 class="work__title">~arty cocoon~</h2>
-      <p class="work__date">2019</p>
-      <div class="work__poem">Tender chrysalis,
-Than another&rsquo;s butterfly
-I&rsquo;d rather my moth</div>
-    </article>
+      <article class="work">
+        <h2 class="work__title">Elephants</h2>
+        <p class="work__date">2020</p>
+        <img class="work__image" src="elephants.jpg" alt="Elephants — colored pencil" />
+        <p class="work__description">Colored pencil.</p>
+      </article>
+    </div>
 
   </section>
 
@@ -1192,8 +950,8 @@ I&rsquo;d rather my moth</div>
           const dy = nodes[i].y - nodes[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.08;
-            ctx.strokeStyle = `rgba(77, 168, 255, ${alpha})`;
+            const alpha = (1 - dist / maxDist) * 0.12;
+            ctx.strokeStyle = `rgba(232, 176, 74, ${alpha})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
@@ -1218,14 +976,14 @@ I&rsquo;d rather my moth</div>
 
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(77, 168, 255, ${n.opacity + extra})`;
+        ctx.fillStyle = `rgba(232, 176, 74, ${(n.opacity + extra) * 1.3})`;
         ctx.fill();
 
         // Glow on bright nodes
-        if (n.opacity + extra > 0.35) {
+        if (n.opacity + extra > 0.3) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(77, 168, 255, ${(n.opacity + extra) * 0.15})`;
+          ctx.fillStyle = `rgba(232, 176, 74, ${(n.opacity + extra) * 0.2})`;
           ctx.fill();
         }
 
