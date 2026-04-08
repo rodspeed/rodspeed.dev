@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Memory Has a Confidence Problem &mdash; RodSpeed</title>
+  <meta name="description" content="Three serious memory systems have shipped in four months. The field is converging on an insight: flat memory doesn't work. It hasn't converged on what to do about it." />
+  <meta property="og:title" content="AI Memory Has a Confidence Problem" />
+  <meta property="og:description" content="Three independent implementations, a survey paper, and a growing practitioner community that knows append-only memory isn't enough. Here's the map." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/ai-memory-confidence.html" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --accent-electric: #3d9aff;
+  --accent-dim: rgba(77, 168, 255, 0.1);
+  --accent-glow: rgba(77, 168, 255, 0.35);
+  --warm: #e8b04a;
+  --purple: #a78bfa;
+  --coral: #e8916d;
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-prose: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-bright); }
+
+/* Background texture */
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__back {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__back:hover { color: var(--text-primary); }
+
+/* Article */
+.article {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 120px;
+}
+
+.article__type {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.article__type::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.article__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.article__date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+}
+
+/* Prose */
+.prose {
+  font-family: var(--font-prose);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.prose p {
+  margin-bottom: 1.5em;
+}
+
+.prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 3em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.01em;
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+  margin: 3em 0;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 20px;
+  margin: 2em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prose code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--accent-bright);
+}
+
+.prose pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 2em 0;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.prose ol, .prose ul {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose li strong {
+  color: var(--accent-bright);
+}
+
+/* Repo link */
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5em;
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.repo-link:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.repo-link svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Colophon */
+.colophon {
+  margin-top: 4em;
+  padding-top: 2em;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .article { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+  .prose { font-size: 1.02rem; }
+  .prose pre { padding: 16px; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <a href="./" class="nav__back">Back to writing</a>
+    </div>
+  </nav>
+
+  <article class="article">
+    <span class="article__type">Essay</span>
+    <h1 class="article__title">AI Memory Has a Confidence Problem</h1>
+    <p class="article__date">April 2026</p>
+
+    <div class="prose">
+
+<p>AI agent memory is having a moment. In the past four months, three serious systems have shipped &mdash; each solving a different piece of the problem, each leaving a different gap.</p>
+
+<p>The field is converging on an insight: flat memory doesn&rsquo;t work. It hasn&rsquo;t converged on what to do about it. Here&rsquo;s the map.</p>
+
+<hr />
+
+<h2>The practitioner baseline</h2>
+
+<p>Cog shipped in March 2026 and pulled 337 GitHub stars in three weeks. It&rsquo;s a convention-based memory system for Claude Code &mdash; markdown files, slash commands, progressive context loading. Observations are append-only. They condense into patterns, capped at 70 lines. Stale data archives. Indexes rebuild.</p>
+
+<p>It solves a real problem: Claude Code&rsquo;s built-in memory is unstructured and difficult to inspect. Cog gives it bones.</p>
+
+<p>What Cog doesn&rsquo;t do: track confidence. Every observation carries the same weight. There&rsquo;s no mechanism for &ldquo;I&rsquo;m less sure about this one&rdquo; or &ldquo;this contradicts something I recorded last month.&rdquo; A consistency sweep checks for contradictions, but produces no structured output for holding them. Contradictions get found and then lost.</p>
+
+<p>Organization is necessary. Epistemology is what&rsquo;s missing.</p>
+
+<hr />
+
+<h2>The academic response</h2>
+
+<p>Two systems formalize what Cog leaves implicit.</p>
+
+<p>Hindsight, from Vectorize.io, organizes memory into four networks: facts, experiences, observations, and opinions. The key move is that opinions carry confidence scores &mdash; 0 to 1, updated through explicit reinforcement. Supporting evidence nudges confidence up. Contradiction pushes it down. They call this <em>epistemic clarity</em>: the clean separation between what an agent knows, has experienced, believes, and has inferred. It hit 91.4% on LongMemEval. VentureBeat covered it.</p>
+
+<p>Kumiho, published the same month, goes further. It&rsquo;s a graph-native memory architecture formally grounded in AGM belief revision &mdash; the gold standard for how rational agents should update beliefs when new information arrives. The paper proves satisfaction of the core AGM postulates. This is the first system that can say: our belief updates are provably rational.</p>
+
+<p>Both advance the field. Neither targets individual practitioners. Hindsight is built for agentic workflows at scale. Kumiho is an SDK with Redis and Neo4j backends. These are infrastructure for production systems, not tools you drop into your working directory.</p>
+
+<hr />
+
+<h2>The gap between infrastructure and use</h2>
+
+<p>Mainstream agent memory frameworks &mdash; Mem0, Zep, Letta &mdash; haven&rsquo;t caught up. They treat memory as retrieval: store, find, return. Mem0 resolves conflicts by overwriting. Zep tracks temporal validity but not subjective confidence. Letta surfaces conflicts as text-level merge issues. None model the difference between &ldquo;I observed this&rdquo; and &ldquo;I believe this at 70% confidence based on three sessions of evidence.&rdquo;</p>
+
+<p>The canonical survey paper &mdash; &ldquo;Memory in the Age of AI Agents,&rdquo; December 2025 &mdash; maps a taxonomy of Forms, Functions, and Dynamics. Useful as an organizing frame. But it notes that traditional long/short-term memory models are insufficient without proposing what replaces them.</p>
+
+<p>There&rsquo;s a missing layer between &ldquo;store and retrieve&rdquo; and &ldquo;formally rational belief revision.&rdquo; Something a practitioner can adopt today, without deploying graph databases or proving postulate satisfaction.</p>
+
+<hr />
+
+<h2>What I built</h2>
+
+<p>Epistemic Memory is a protocol &mdash; not a library, not an SDK. Markdown files and two Claude Code skills that copy into your project directory.</p>
+
+<p>Every belief carries metadata: confidence (0.0&ndash;1.0), first recorded, last confirmed, last challenged, and permanence class. The system doesn&rsquo;t treat &ldquo;you use dark mode&rdquo; and &ldquo;you think in systems&rdquo; as the same kind of claim. It distinguishes them by evidence quality and decays them on different schedules.</p>
+
+<p>I wrote about the design in a <a href="epistemic-memory.html">previous post</a>. Since then, two pieces were missing: the Observe skill, which automates behavioral evidence collection at conversation end, and the session counter hook, which gives periodic reviews a mechanical trigger instead of relying on the AI to remember. Both now ship. All ten components are live.</p>
+
+<p>The difference from Cog isn&rsquo;t sophistication &mdash; it&rsquo;s posture. Cog asks &ldquo;where does this memory go?&rdquo; Epistemic Memory asks &ldquo;how confident should I be, and what would change my mind?&rdquo; Cog is a filing cabinet. This is a belief revision system that happens to use files.</p>
+
+<p>The difference from Hindsight and Kumiho is scope. Those are infrastructure for memory-augmented agents at scale. This is a protocol for one person working with one AI, adopted in five minutes by copying files.</p>
+
+<hr />
+
+<h2>What&rsquo;s still missing</h2>
+
+<p>The decay rates &mdash; two-year half-life for stable traits, five months for durable, six weeks for situational &mdash; are starting guesses, not calibrated values.</p>
+
+<p>There&rsquo;s no ground truth for belief accuracy. The periodic review asks the user directly, but that depends on the user&rsquo;s self-knowledge &mdash; which has its own blind spots.</p>
+
+<p>The entire protocol depends on the LLM following complex instructions reliably. LLMs don&rsquo;t. The session counter mechanizes one enforcement point. The Observe skill mechanizes another. The rest runs on instruction-following that isn&rsquo;t guaranteed.</p>
+
+<p>And the term itself &mdash; &ldquo;epistemic memory&rdquo; &mdash; has near-zero adoption in AI agent discourse. The concepts are arriving under different names: <em>epistemic clarity</em>, <em>epistemic governance</em>. Whether this language sticks is an open question.</p>
+
+<hr />
+
+<h2>Where this is heading</h2>
+
+<p>The convergence is real. Four months ago, no one was talking about confidence-weighted beliefs for AI agents. Now there are three independent implementations, a survey paper, and a growing practitioner community that knows append-only memory isn&rsquo;t enough. 337 stars for a well-organized filing cabinet tells you the appetite is there.</p>
+
+<p>The next step is empirical. Run the protocol for N sessions with adversarial inputs &mdash; introduce contradictory behavior, test whether the system flags it, measure how many sessions until confidence adjusts. Compare against a flat baseline. The formal frameworks exist. The implementations exist. What&rsquo;s missing is evidence that confidence-weighted memory outperforms the alternative in practice, not just in theory.</p>
+
+<p>I think it does. But &ldquo;I think&rdquo; is a 0.6, not a 0.9. The protocol&rsquo;s own epistemology demands I say so.</p>
+
+      <div class="colophon">
+        <p>Companion to <a href="epistemic-memory.html">Your AI Keeps a Diary About You. It&rsquo;s Doing It Badly.</a> Epistemic Memory is open source:</p>
+        <a href="https://github.com/rodspeed/epistemic-memory" class="repo-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          github.com/rodspeed/epistemic-memory
+        </a>
+      </div>
+
+    </div>
+  </article>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
