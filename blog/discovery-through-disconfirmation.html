@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google-site-verification" content="jCAPpnvaPKKmUBMKXWgTF8xYCouGgdwTKN0gf50tz-c" />
+  <title>Discovery Through Disconfirmation &mdash; RodSpeed</title>
+  <meta name="description" content="I published a paper claiming deep linguistic constraints restructure LLM cognition. Then I designed the experiment that disproved it. Trivial vocabulary bans outperformed deep constraints across 15,600 trials." />
+  <meta property="og:title" content="Discovery Through Disconfirmation" />
+  <meta property="og:description" content="I published a paper claiming deep linguistic constraints restructure LLM cognition. Then I designed the experiment that disproved it. Trivial vocabulary bans outperformed deep constraints across 15,600 trials." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://rodspeed.ai/blog/discovery-through-disconfirmation.html" />
+  <meta property="og:image" content="https://rodspeed.ai/images/og-default.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rodspeed.ai/images/og-default.png" />
+  <link rel="canonical" href="https://rodspeed.ai/blog/discovery-through-disconfirmation.html" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Discovery Through Disconfirmation",
+    "description": "I published a paper claiming deep linguistic constraints restructure LLM cognition. Then I designed the experiment that disproved it. Trivial vocabulary bans outperformed deep constraints across 15,600 trials.",
+    "url": "https://rodspeed.ai/blog/discovery-through-disconfirmation.html",
+    "datePublished": "2026-04-30",
+    "author": { "@type": "Person", "name": "Rodney Jehu", "url": "https://rodspeed.ai" },
+    "publisher": { "@type": "Person", "name": "Rodney Jehu" },
+    "image": "https://rodspeed.ai/images/og-default.png"
+  }
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1b30'/><text x='50' y='68' font-size='48' font-family='sans-serif' font-weight='bold' fill='%234da8ff' text-anchor='middle'>R</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #0d1b30;
+  --bg-light: #11223d;
+  --accent: #4da8ff;
+  --accent-bright: #6dc0ff;
+  --accent-electric: #3d9aff;
+  --accent-dim: rgba(77, 168, 255, 0.1);
+  --accent-glow: rgba(77, 168, 255, 0.35);
+  --warm: #e8b04a;
+  --purple: #a78bfa;
+  --coral: #e8916d;
+  --surface: rgba(120, 170, 255, 0.05);
+  --border: rgba(120, 170, 255, 0.1);
+  --border-bright: rgba(120, 170, 255, 0.2);
+  --text-primary: #e6ecf5;
+  --text-secondary: rgba(230, 236, 245, 0.65);
+  --text-muted: rgba(230, 236, 245, 0.3);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-prose: 'Newsreader', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-secondary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-bright); }
+
+/* Background texture */
+.bg-weave {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(100,160,255,0.02) 3px, rgba(100,160,255,0.02) 4px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(80,140,240,0.016) 3px, rgba(80,140,240,0.016) 4px, transparent 4px, transparent 8px);
+}
+
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(13, 27, 48, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.nav__back {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav__back:hover { color: var(--text-primary); }
+
+/* Article */
+.article {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 40px 120px;
+}
+
+.article__type {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.article__type::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.article__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.article__date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+}
+
+/* Prose */
+.prose {
+  font-family: var(--font-prose);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.prose p {
+  margin-bottom: 1.5em;
+}
+
+.prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 3em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.01em;
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-bright), transparent);
+  margin: 3em 0;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 20px;
+  margin: 2em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prose code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--accent-bright);
+}
+
+.prose ol, .prose ul {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose li strong {
+  color: var(--accent-bright);
+}
+
+/* Colophon */
+.colophon {
+  margin-top: 4em;
+  padding-top: 2em;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.footer__links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+}
+
+.footer__links a {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.footer__links a:hover { color: var(--text-primary); }
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .article { padding: 100px 20px 80px; }
+  .nav__inner { padding: 0 20px; }
+  .footer { padding: 24px 20px 40px; flex-direction: column; gap: 12px; }
+  .prose { font-size: 1.02rem; }
+}
+  </style>
+</head>
+<body>
+
+  <div class="bg-weave"></div>
+  <div class="bg-noise"></div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../" class="nav__name">RODSPEED</a>
+      <a href="./" class="nav__back">Back to writing</a>
+    </div>
+  </nav>
+
+  <article class="article">
+    <span class="article__type">Essay</span>
+    <h1 class="article__title">Discovery Through Disconfirmation</h1>
+    <p class="article__date">April 2026</p>
+
+    <div class="prose">
+
+<p>In March 2026 I published a paper arguing that deep linguistic constraints &mdash; E-Prime, No-Have, constructions that force entire grammatical categories out of reach &mdash; restructure how language models reason. Not just what they say. How they think. The claim rested on a specific theoretical commitment: I believed strong Sapir-Whorf was literally true for token predictors. Language <em>is</em> cognition for an LLM. Change the available vocabulary and you change the available computation.</p>
+
+<p>The results looked good. A 16-agent ensemble under diverse linguistic constraints hit 100% accuracy on a benchmark where the unconstrained control scored 88%. A minimal subset &mdash; three agents &mdash; matched the full ensemble. The cross-model correlation between constraint effect and model capability was &minus;0.75: what helped one model hurt another, suggesting constraints weren&rsquo;t just adding effort but genuinely redirecting cognition.</p>
+
+<p>I believed the theory. So I designed the experiment that would close the confounds Paper 1 left open. It closed them &mdash; and killed the theory in the process.</p>
+
+<hr />
+
+<h2>The active control</h2>
+
+<p>Paper 1 had a baseline problem. Every constrained condition was compared to unconstrained English. That leaves a confound wide open: maybe the improvement comes from the model <em>trying harder</em> because it received a longer, more detailed prompt. Maybe it comes from the metacognitive overhead of monitoring its own output for violations. Neither of those requires the constraint to be linguistically meaningful. It just requires the constraint to exist.</p>
+
+<p>Paper 2 added two active controls to close that gap.</p>
+
+<p>The first was an <strong>elaborated prompt</strong> &mdash; matching the constraint prompts in length, detail, and metacognitive framing, but imposing no vocabulary restriction. If prompt complexity alone explained the improvement, this condition would match the constrained ones.</p>
+
+<p>The second was the one that mattered: a <strong>neutral word ban</strong>. It banned twenty semantically inert filler words &mdash; intensifiers and hedges like <em>very</em>, <em>quite</em>, <em>rather</em>, <em>somewhat</em>, <em>really</em>, <em>pretty</em>, <em>just</em>, <em>basically</em>, <em>actually</em>, <em>literally</em>. This matched the metalinguistic self-monitoring load of E-Prime and No-Have without targeting any reasoning-relevant vocabulary. If the neutral ban showed null effects while the real constraints showed gains, the monitoring confound would be dead empirically. The distinction between deep and shallow constraints would hold.</p>
+
+<p>That was the prediction. The neutral ban was supposed to be the null.</p>
+
+<hr />
+
+<h2>What the data showed</h2>
+
+<p>15,600 trials. Five conditions. Six models &mdash; three frontier, three small. 130 items across seven task types. Four repetitions per cell.</p>
+
+<p>Control: 83.0%.</p>
+
+<p>Neutral word ban: <strong>89.7%</strong>.</p>
+
+<p>No-Have: 88.4%. Elaborated prompt: 87.2%. E-Prime at full compliance: 86.7%.</p>
+
+<p>The null condition outperformed every real constraint. Banning filler words improved reasoning more than banning all forms of <em>to be</em>.</p>
+
+<p>Constraint depth &mdash; how much of the language the ban removes, how deeply it restructures available grammar &mdash; tracked inversely with effect size. The deeper the constraint, the smaller the improvement. E-Prime, the deepest, performed worst among the treatment conditions. The ordering is suggestive with four conditions, not a proven functional relationship &mdash; but the direction was the opposite of what the theory predicted.</p>
+
+<p>And the cross-model correlation from Paper 1 &mdash; the &minus;0.75 that suggested constraints redirect cognition differently depending on the model&rsquo;s internal structure? It didn&rsquo;t replicate. Paper 2: <em>r</em>&nbsp;=&nbsp;0.005. Functionally zero.</p>
+
+<hr />
+
+<h2>What went wrong with the theory</h2>
+
+<p>The theory predicted that deeper constraints would produce larger effects because they force more radical cognitive restructuring. The data showed the opposite. That kills the causal mechanism. Constraints don&rsquo;t improve reasoning by redirecting cognition into structurally different pathways. They improve reasoning by <em>disrupting default token generation</em>.</p>
+
+<p>Any vocabulary ban &mdash; deep or shallow &mdash; pushes the model off its most probable output distribution. The model can&rsquo;t produce its default phrasing, so it searches for alternatives. That search, in itself, functions as a regularizer. It breaks the ruts.</p>
+
+<p>The regularity of this effect explains the depth inversion. Shallow constraints are easy to comply with: the model spends minimal effort on compliance and captures the full regularization benefit. Deep constraints impose real compliance overhead &mdash; the model burns tokens monitoring for violations, retrying phrasing, working around grammatical gaps. E-Prime&rsquo;s position at the bottom may also reflect the overhead of its compliance retry loop &mdash; 45.6% of E-Prime trials required a retry, a confound unique to that condition. The net gain shrinks as depth increases.</p>
+
+<p>E-Prime doesn&rsquo;t make a model think differently. It makes a model think <em>less efficiently about thinking differently</em>. The data are consistent with regularization as a mechanism &mdash; disruption of default generation patterns &mdash; though this interpretation is post-hoc and would need direct testing to confirm.</p>
+
+<hr />
+
+<h2>What survived</h2>
+
+<p>The results don&rsquo;t invalidate the research program. They redirect it.</p>
+
+<p>Every constrained condition outperformed the unconstrained control. Vocabulary bans improve LLM reasoning &mdash; reliably, across models, across task types. That finding is robust. Fourteen of seventy pooled comparisons survived false discovery rate correction, though the differences between treatment conditions (1&ndash;3 percentage points) are mostly not statistically distinguishable from each other. The rank ordering is a trend, not a certainty.</p>
+
+<p>Not every model follows the pattern. Sonnet reverses the depth inversion entirely &mdash; E-Prime ranks second, the neutral ban ranks last. The paper discusses model-level variation in detail. The pooled result holds, but individual models can diverge.</p>
+
+<p>The elaborated prompt &mdash; the &ldquo;just try harder&rdquo; control &mdash; also improved performance (+4.2 points over control), but the neutral ban beat it by another 2.5 points. So it&rsquo;s not just prompt length and it&rsquo;s not just effort. There&rsquo;s something specific about vocabulary restriction that goes beyond metacognitive framing.</p>
+
+<p>The practical upshot is striking: the cheapest, simplest constraint &mdash; banning a list of filler words &mdash; produces the largest improvement. You don&rsquo;t need a theory of linguistic relativity. You don&rsquo;t need E-Prime or Korzybski or Jakob von Uexk&uuml;ll. You need twenty banned words and a compliance check. Whether this translates outside the experimental setup &mdash; different benchmarks, different prompt formats &mdash; remains to be tested.</p>
+
+<hr />
+
+<h2>What I got wrong</h2>
+
+<p>The Umwelt Engineering framework &mdash; the idea that you can design the linguistic world an AI agent inhabits, shaping its cognition by constraining its available vocabulary &mdash; was built on the assumption that the <em>content</em> of the constraint matters. That banning <em>to be</em> forces a specific kind of operational, process-oriented thinking. That banning possessive <em>to have</em> forces relational reasoning. That the constraint&rsquo;s semantic target determines the cognitive effect.</p>
+
+<p>The data says no. The constraint&rsquo;s semantic target is largely irrelevant. What matters is the disruption itself &mdash; the forcing function that pushes the model off its default distribution. The content of the ban is secondary to the fact of the ban.</p>
+
+<p>This doesn&rsquo;t make the Umwelt framework useless. It makes it a design lens rather than a causal theory. It&rsquo;s still a useful way to think about what you&rsquo;re doing when you constrain an agent&rsquo;s language. But the mechanism it posited &mdash; deep linguistic restructuring of cognition &mdash; isn&rsquo;t what the data support. The frame survives as metaphor. The causal claim doesn&rsquo;t.</p>
+
+<hr />
+
+<h2>Why publish the disconfirmation</h2>
+
+<p>There&rsquo;s a version of this story where Paper 2 never gets written. Paper 1 has a clean narrative, an interesting result, a novel framework. It stands on its own. The active controls that would challenge it are exactly the ones no reviewer demanded &mdash; I designed them myself, because I knew the confounds were open.</p>
+
+<p>The reason to run the experiment anyway is the same reason the experiment was worth designing: you don&rsquo;t learn anything from a theory you won&rsquo;t test. The most informative result is the one that surprises you. Paper 1 told me what I expected to hear. Paper 2 told me something I didn&rsquo;t expect, and the field is better for it.</p>
+
+<p>The finding that trivial vocabulary bans outperform deep linguistic constraints is more useful than the finding that deep constraints work. It&rsquo;s cheaper to implement, easier to explain, and harder to argue with. It points practitioners toward a technique they can deploy in five minutes &mdash; ban filler words from your agent&rsquo;s system prompt &mdash; rather than one that requires a philosophy of language.</p>
+
+<p>Discovery through disconfirmation. You learn the most when you&rsquo;re wrong.</p>
+
+      <p class="colophon">Written with AI assistance. Paper 1: <a href="https://arxiv.org/abs/2603.27626">arXiv:2603.27626</a>. Paper 2: &ldquo;Trivial Vocabulary Bans Improve LLM Reasoning More Than Deep Linguistic Constraints&rdquo; (submitted). Code: <a href="https://github.com/rodspeed/umwelt-engineering">github.com/rodspeed/umwelt-engineering</a>.</p>
+
+    </div>
+  </article>
+
+  <footer class="footer">
+    <ul class="footer__links">
+      <li><a href="https://github.com/rodspeed" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://x.com/rjehuappiah" target="_blank" rel="noopener">X</a></li>
+      <li><a href="https://soundcloud.com/rodspeed88" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="mailto:rkjehuappiah@gmail.com">Contact</a></li>
+    </ul>
+    <span class="footer__copy">&copy; 2026 Rodney Jehu</span>
+  </footer>
+
+</body>
+</html>
